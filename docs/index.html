@@ -1,1 +1,475 @@
-Coming soon!!!
+<!DOCTYPE html>
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> 
+<![endif]-->
+<!--[if IE 7]> <html class="no-js lt-ie9 lt-ie8" lang="en"> 
+<![endif]-->
+<!--[if IE 8]> <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en"> <!--<![endif]-->
+    <head>
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-153119114-1"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+		  gtag('config', 'UA-153119114-2');
+		</script>
+
+        <title>LLM-Blender</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+        <meta name="author" content="LLM-Blender">
+        <meta charset="UTF-8">
+
+        <!-- CSS Bootstrap & Custom -->
+        <link href="css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <link href="css/font-awesome.min.css" rel="stylesheet" media="screen">
+		<link href="css/animate.css" rel="stylesheet" media="screen">
+		
+		<meta property="og:site_name" content="LLM-Blender | Project website">
+		<meta property="og:title" content="LLM-Blender | ">
+		<meta name=description content="Authors: Dongfu Jiang, Xiang Ren, Bill Yuchen Lin.">
+		<meta name=keywords content="LLM-Blender, Yuchen Lin, Bill Lin, Natural Language Processing, Computational Linguistics,  University of Southern California, AI2, Allen Institute for AI, Machine Learning, Commonsense, ScienceWorld, Text Game">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script language="javascript">
+				var ie4 = false; if(document.all) { ie4 = true; }
+			function getObject(id) { if (ie4) { return document.all[id]; } else { return document.getElementById(id); } }
+			function toggle(link, divId) { var lText = link.innerHTML; var d = getObject(divId);
+			 if (lText == '[show more]') { link.innerHTML = '[hide more]'; d.style.display = 'block'; }
+			 else { link.innerHTML = '[show more]'; d.style.display = 'none'; } }
+			   </script>
+<script>
+$(document).ready(function () {
+$('#dtBasicExample').DataTable();
+$('.dataTables_length').addClass('bs-select');
+});
+</script>
+
+<link href="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.css" rel="stylesheet">
+
+<script src="https://unpkg.com/bootstrap-table@1.15.5/dist/bootstrap-table.min.js"></script>
+
+<style type="text/css">
+table.dataTable thead .sorting:after,
+table.dataTable thead .sorting:before,
+table.dataTable thead .sorting_asc:after,
+table.dataTable thead .sorting_asc:before,
+table.dataTable thead .sorting_asc_disabled:after,
+table.dataTable thead .sorting_asc_disabled:before,
+table.dataTable thead .sorting_desc:after,
+table.dataTable thead .sorting_desc:before,
+table.dataTable thead .sorting_desc_disabled:after,
+table.dataTable thead .sorting_desc_disabled:before {
+bottom: .5em;
+}
+</style>
+		<!-- <link rel="stylesheet" id="usc-homepage-2017-style-css" href="https://www.usc.edu/wp-content/themes/usc-homepage-2017/assets/css/usc-homepage-2017.css?ver=4.1.0" type="text/css" media="screen,print"> -->
+		<link href="style.css" rel="stylesheet" media="screen">
+		<!-- MDBootstrap Datatables  -->
+		<link href="css/addons/datatables.min.css" rel="stylesheet">
+		<!-- MDBootstrap Datatables  -->
+		<script type="text/javascript" src="js/addons/datatables.min.js"></script>
+        <!-- Favicons -->
+        <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57-precomposed.png">
+        <link rel="shortcut icon" href="images/ico/favicon.ico">
+    
+        <!-- JavaScripts -->
+        <script src="js/jquery-1.10.2.min.js"></script>
+        <script src="js/min/modernizr.min.js"></script>
+        <!--[if lt IE 8]>
+	    <div style=' clear: both; text-align:center; position: relative;'>
+            <a href="http://www.microsoft.com/windows/internet-explorer/default.aspx?ocid=ie6_countdown_bannercode"><img src="http://storage.ie6countdown.com/assets/100/images/banners/warning_bar_0000_us.jpg" border="0" alt="" /></a>
+        </div>
+		<![endif]-->
+		<link href="js/bootstrap-table.min.css" rel="stylesheet">
+
+<script src="js/bootstrap-table.min.js"></script>
+		
+<style>
+	
+	a{
+		color: #281885;
+	}
+
+	.menu-wrapper .main-menu ul.sf-menu > li {
+		border-right: 1px solid white;
+	  }
+
+	body {
+		font-family: Helvetica, Arial, Heveltica Neue, sans-serif;
+		font-size: 1.8em;
+		line-height: 1.6em;
+		background: AED6F1;
+		color: #777777;
+		-webkit-font-smoothing: antialiased;
+		overflow-x: hidden;
+	  }
+	
+	  ul {
+		margin: 0;
+		padding: 0;
+		list-style-type: circle;
+	  }
+	  
+	  li {
+		margin-bottom: 10px; /* Add space between each list item */
+	  }
+	 .section {
+		font-size:22px;
+	  }
+	
+	  .btna{
+		font-weight: 600;
+		color: rgb(195, 0, 255);
+	  }
+ 
+	  .site-header {
+		background-color: #F5F5F5;
+		color: black;
+		font-size: 13px;
+		border-bottom: 3px solid #276be0;
+	  }
+	
+	  .site-header a{
+		color: #281885;
+	}
+
+</style>
+    </head>
+    <body>
+	
+	
+		<div class="responsive-menu visible-sm visible-xs">
+			<a href="#" class="toggle-menu"><i class="fa fa-bars"></i></a>
+			<div class="menu-open">
+				<nav>
+						<ul class="sf-menu">
+								<li ><a style="color:white; font-weight: 600" href="index.html">Introduction</a></li> 
+								<li ><a style="color:white; font-weight: 600" href="#bg">Background</a></li>
+								<li ><a style="color:white; font-weight: 600" href="#approach">Approach</a></li>
+								<li ><a style="color:white; font-weight: 600" href="#eval">Evaluation</a></li>
+								<li ><a style="color:white; font-weight: 600" href="#analysis">Analysis</a></li>
+								<li ><a style="color:white; font-weight: 600" href="#misc">Misc.</a></li>
+							</ul>
+				</nav> 
+			</div> <!-- /.menu-open -->
+		</div> <!-- /.responsive-menu -->
+
+		<header class="site-header" id="topsection"">
+			
+			<div class="container">
+				<div class="main-header">
+					<div class="row">
+						
+						<div class="col-md-8 col-sm-4" id="top">
+							<h1 style="color: #183385"><b>LLM-Blender</b></em></h1>
+							<span style="color:#183385; font-size: 16pt; font-family: Roboto, Helvetica, Arial, Heveltica Neue, sans-serif; font-weight: 500;"> 
+								A Generative Agent with Fast and Slow Thinking for Complex Interactive Tasks
+							
+							</span> <br>
+
+							<span style="color:#183385; font-size: 14pt; font-family: Roboto, Helvetica, Arial, Heveltica Neue, sans-serif">
+								<br> <b>Authors:</b> <a class="name" target="_blank" href="http://yuchenlin.xyz">Bill Yuchen Lin</a>, 
+								Yicheng Fu, Karina Yang, 
+								<a href="http://prithvirajva.com" target="_blank"> Prithviraj Ammanabrolu</a>, 
+								<a href="https://users.soe.ucsc.edu/~hannahbrahman/" target="_blank"> Faeze Brahman</a>, 
+								<a href="http://tartrl.cn/people/huangshiyu/" target="_blank"> Shiyu Huang</a>,
+								<a target="_blank" href="https://allenai.org/team/chandrab/">Chandra Bhagavatula</a>, 
+								<a target="_blank" href="https://homes.cs.washington.edu/~yejin/">Yejin Choi</a>, 
+								<a target="_blank" href="http://ink-ron.usc.edu/xiangren/">Xiang Ren</a><br>
+							</span>
+							<br>
+						</div> 
+						<div class="col-md-4 main-header-right">
+							<br>
+							<object width="70%"  type="image/svg+xml" data="logo-ai2.svg" class="logo">
+								AI2 Logo <!-- fallback image in CSS -->
+							  </object>
+							  <br /> 
+							  <img width="60%" src="logo-usc.png" alt="USC">
+						</div>
+					</div> <!-- /.row -->
+				</div> <!-- /.main-header -->
+			</div> <!-- /.container -->	
+
+			<div class="menu-wrapper visible-md visible-lg">
+				<div class="container">
+					<div class="inner-menu">
+						<div class="row">
+							<div class="col-md-12 main-menu">
+								<nav>
+									<ul class="sf-menu sf-js-enabled sf-arrows"> 
+								<li><a style="color:white; font-weight: 600; font-size: 18px" href="index.html">Introduction</a></li> 
+								<li><a style="color:white; font-weight: 600; font-size: 18px" href="#bg">Background</a></li>
+								<li><a style="color:white; font-weight: 600; font-size: 18px" href="#approach">Approach</a></li>
+								<li><a style="color:white; font-weight: 600; font-size: 18px" href="#eval">Evaluation</a></li>
+								<li><a style="color:white; font-weight: 600; font-size: 18px" href="#analysis">Analysis</a></li>
+								<li><a style="color:white; font-weight: 600; font-size: 18px" href="#misc">Misc.</a></li>
+										<!-- <li ><a href="#blog">Blogs</a></li>  -->
+										<!-- <li><a href="#contact">Contact</a></li> -->
+									</ul>
+								</nav>
+							</div> <!-- /.main-menu --> 
+						</div> <!-- /.row -->
+					</div> <!-- /.inner-menu -->
+				</div> <!-- /.container -->
+			</div>
+ 
+		</header> <!-- /.site-header -->
+
+
+		<div class="container">
+			
+			<div class="top-content">
+				
+				
+
+			<div class="row">
+					<div class="col-md-12">
+						<div class="box-content">
+							<div class="row">
+								<div class="col-md-12" id="about">
+									<!-- <h2 class="widget-title">(Bill) Yuchen Lin</h2> -->
+								<h4 class="widget-title"><span class="section"><a href="#about" ><b><em>Introduction</em></b></a></span></h4>
+								<div class="col-md-12">  
+										<ul style="font-size:18px; color:#0b32a7b4;">
+											<li>We introduce <b>LLM-Blender</b>, a novel agent framework inspired by the <a href="https://en.wikipedia.org/wiki/Dual_process_theory" target="_blank">dual-process theory</a> of human cognition, designed to excel in action planning for complex interactive reasoning tasks. LLM-Blender integrates the strengths of behavior cloning and prompting large language models (LLMs) to enhance task completion performance. </li>
+											<li>The framework comprises two primary modules: the <b>Swift</b> module, representing fast and intuitive thinking, and the <b>Sage</b> module, emulating deliberate thought processes.  The Swift module is a small encoder-decoder LM fine-tuned on the oracle agent's action trajectories (i.e., <a href="https://sites.google.com/view/icml2018-imitation-learning/" target="_blank">imitation learning / behavior cloning</a>), while the Sage module employs LLMs such as <a href="https://openai.com/research/gpt-4" target="_blank">GPT-4</a> for subgoal planning and grounding. We develop a heuristic method to harmoniously integrate the two modules, resulting in a more efficient and robust problem-solving process. </li>
+
+											<li>In 30 tasks from the <a href="https://sciworld.apps.allenai.org" target="_blank"><b>ScienceWorld</b></a> benchmark, <b>LLM-Blender</b> significantly outperforms other methods such as <a style="color:#0b32a7b4; font-weight:600" href="https://say-can.github.io" target="_blank">SayCan</a>, <a style="color:#0b32a7b4; font-weight:600" href="https://react-lm.github.io" target="_blank">ReAct</a>, and <a style="color:#0b32a7b4; font-weight:600" href="https://arxiv.org/abs/2303.11366" target="_blank">Reflexion</a>, demonstrating its effectiveness in solving complex real-world tasks.</li>
+										</ul>					 
+									<p style="text-align: left;"> 
+											 	<font color="blue"><b>Links:</b></font> &nbsp; 
+									
+									<a class="btna" target="_blank" href="https://arxiv.org/abs/2305.17390">[Paper]</a> &nbsp;
+									<a class="btna" target="_blank" href="https://github.com/yuchenlin/LLM-Blender/">[Code]</a> &nbsp;
+									<a class="btna" target="_blank" href="https://github.com/allenai/ScienceWorld">[ScienceWorld]</a> &nbsp;
+									<br />
+									<font color="blue"><b>Teams:</b></font> &nbsp; 
+									<a class="btna" target="_blank" href="https://mosaic.allenai.org">[AI2-Mosaic]</a> &nbsp; 
+									<a class="btna" target="_blank" href="http://inklab.usc.edu/">[USC-INK]</a> &nbsp; 
+
+									<br>
+ 
+									</p>  
+									
+								</div>
+								
+									</div>
+									
+								<div  class="col-md-12">
+								
+								</div>
+								</div>
+								
+								</div>
+								
+								</div>
+								 
+									</div> <!-- /.col-md-4 -->
+								</div>
+								
+
+
+			<div class="row">
+			
+				<div class="col-md-12">
+				<div class="box-content">
+						<div class="row">
+							<div class="col-md-12" id="bg">
+								<h4 class="widget-title"><span class="section"><b><a><em>Background</em></a></b></span></h4>
+								<div class="col-md-12"  align="center"> <img width="100%" src="methods.png" alt="USC/ISI">
+									<br> &nbsp;<br>
+								</div>
+								<div>
+									<p>
+										<br>
+										<a onclick="toggle(this, 'comp_more')" class="btna">[show more]</a>
+									</p>
+									<div class="col-md-12" id="comp_more" style="display: none;">
+
+										There are three primary approaches to developing agents capable of addressing complex interactive reasoning tasks: (1) deep reinforcement learning (RL), (2) behavior cloning (BC) through sequence-to-sequence (seq2seq) learning, and (3) prompting large language models (LLMs). In addition to conventional RL methods such as DRRN, interactive reasoning can be framed as a seq2seq task, where the input text serves as the current state description and the output text corresponds to the subsequent action. By leveraging numerous gold trajectories generated by oracle agents, it becomes feasible to fine-tune Transformer models, like T5, to effectively imitate the behavior of these oracle agents. Recent studies have also demonstrated that generative agents based on prompting LLMs, such as GPT-4, can produce reasonable plans and actions. <br/><br/>
+										<ul>
+											<li> <b><a href="https://say-can.github.io" target="_blank">SayCan</a></b> is a straightforward agent that integrates an LLM with a value function of underlying policies regarding grounding affordances (i.e., the feasibility of an action in the environment). We need to provide the history and current environment as textual inputs to LLMs for generating a ranked list of action candidates. This action list is then reranked based on a value function.</li>
+											<li> <b><a href="https://react-lm.github.io" target="_blank">ReAct</a></b> presents a virtual ‘think’ action, enabling LLMs to generate sub-goals during action planning. This approach requires human annotators to supply examples of correct subgoals for each task type, employing few-shot in-context learning to teach LLMs when and how to ‘think’ in order to plan subsequent subgoals, in addition to providing complete action trajectories.</li>
+											<li> <b><a href="https://arxiv.org/abs/2303.11366">Reflexion</a></b>, a recent work building on ReAct, proposes a multi-round approach enabling LLMs to use the history of previously failed rounds to refine their planning for the next round. This self-reflection mechanism helps LLMs improve after each failed attempt. However, this may not be practical in real-world applications for many tasks, as actions in failed trials can be irrecoverable.</li>
+											<li> <b class="btna">Limitations</b>: All three methods require a new LLM inference at each time step to predict the next immediate action, resulting in inefficient and costly agents. ReAct and Reflexion require  annotations of correct subgoals for each unseen task. Moreover, it is difficult to generalize Reflexion to real world where trial-and-error approaches can be infeasible for embodied tasks.
+											</li>
+											<li> <b class="btna">LLM-Blender</b> (ours) is a hybrid agent framework, inspired by Fast and Slow thinking. In short, we use a smaller LM (e.g., T5) to perform imitation learning and only call LLMs (e.g., GPT-4) when it is necessary for planning. Check the next  for more details. </li>
+										  </ul>
+										</div>
+								</div>
+								  
+							</div>
+						</div>
+						
+					</div> <!-- /.box-content -->
+
+
+						
+				</div> <!-- /.col-md-8 -->
+				
+				
+
+			</div> <!-- /.row -->
+
+
+			<div class="row">
+			
+				<div class="col-md-12">
+				<div class="box-content">
+						<div class="row">
+							<div class="col-md-12" id="approach">
+								<h4 class="widget-title"><span class="section"><b><a><em>LLM-Blender Framework</em></a></b></span></h4>
+								<div class="col-md-12"  align="center"> <img width="100%" src="ss_pipeline.png" alt="USC/ISI">  <br /><br />
+								</div>
+
+
+							<p>
+								
+								<a onclick="toggle(this, 'framework_more')" class="btna">[show more]</a>
+							</p>
+							<div class="col-md-12" id="framework_more" style="display: none;">
+								<b>LLM-Blender consists of two primary modules: the SWIFT module and the SAGE module.  </b> <br><br>
+								<ul>
+									<li>The SWIFT module is a small encoder-decoder LM, fine-tuned on a T5-large (770m) checkpoint using the searched oracle trajectories of training tasks. It encodes short-term memory components, such as previous actions, observations, visited locations, as well as the current environment state. Then, it decodes the next individual action. This module simulates the fast, intuitive thinking characteristic of System 1.</li>
+									<li>
+										The SAGE module, representing the deliberate thinking of System 2, utilizes LLMs, such as GPT-4, and is structured around two prompting stages: planning and grounding. In the planning stage, we prompt LLMs to locate necessary items, plan and track subgoals, as well as detect and fix potential exceptions and mistakes. In the grounding stage, we focus on utilizing LLMs to transform the output subgoals derived from the planning stage into a sequence of actions by demonstrating potential action templates. Unlike prior methods, where LLMs only generate the next immediate action, our procedures engage in longer-term action planning. </li>
+									<li>To harmoniously integrate the SWIFT and SAGE modules, we developed a heuristic algorithm that determines when to (de)activate the SAGE module and how to combine the outputs effectively with an action buffer mechanism.</li>
+								</ul>
+								 
+								</div>
+							</div>
+						</div>
+						
+					</div> <!-- /.box-content -->
+
+
+						
+				</div> <!-- /.col-md-8 -->
+				
+				
+
+			</div> <!-- /.row -->
+
+
+
+
+			<div class="row">
+			
+				<div class="col-md-12">
+				<div class="box-content">
+						<div class="row">
+							<div class="col-md-12" id="eval">
+								<h4 class="widget-title"><span class="section"><b><a><em>Evaluation</em></a></b></span></h4>
+								<div class="col-md-12"  align="center"> <img width="80%" src="eval.png" alt="USC/ISI">  <br /><br />
+								</div>
+
+
+							<p>
+								
+								<a onclick="toggle(this, 'eval_more')" class="btna">[show more]</a>
+							</p>
+							<div class="col-md-12" id="eval_more" style="display: none;">
+								<b>Main Results </b> This table compares the performance of various agents across 30 types of tasks. Detailed descriptions of each task type can be found in the ScienceWorld paper and our appendix. It is evident that LLM-based methods outperform conventional agents due to their superior generalization ability, albeit at a higher deployment cost. The behavior cloning model TDT (11b) performs on par with DRRN, but with greater efficiency in learning and inference. In contrast, our SWIFT-only agent (770m) achieves an overall performance of 49.22, which we attribute to its balanced training data and the use of a sliding window for longer action histories.
+								ReAct demonstrates a noticeable improvement over SayCan for short and medium tasks, owing to its subgoal annotations for in-context learning and the inclusion of ‘think’ actions. Reflexion surpasses ReAct in shorter tasks; however, comparing Reflexion with other agents is not entirely fair. Reflexion can run up to four rounds, while the others are limited to one round. This discrepancy is particularly unfair for tasks involving multiple-choice scenarios. Nevertheless, we include Reflexion’s results to analyze the potential of such methods.
+								</div>
+							</div>
+						</div>
+						
+					</div> <!-- /.box-content -->
+
+
+						
+				</div> <!-- /.col-md-8 -->
+				
+				
+
+			</div> <!-- /.row -->
+
+		
+			<div class="row">
+			
+				<div class="col-md-12">
+				<div class="box-content">
+						<div class="row">
+							<div class="col-md-12" id="analysis">
+								<h4 class="widget-title"><span class="section"><b><a><em>Analysis</em></a></b></span></h4>
+								<div class="col-md-12"  align="center"> <img width="100%" src="curves_all.png" alt="USC/ISI">  <br /><br />
+								</div>
+
+
+							<p>
+								
+								<a onclick="toggle(this, 'analysis_more')" class="btna">[show more]</a>
+							</p>
+							<div class="col-md-12" id="analysis_more" style="display: none;">
+								<b>Efficiency</b>. To thoroughly examine the efficiency of agents across all task types, we use Figure 3 to visualize the average trajectories of the first three testing variations for each task involving LLM-Blender, ReAct, and the oracle agent. We arrange the tasks based on their average lengths of oracle trajectories (*Len in Table 1). We observe that oracle trajectories consistently achieve perfect scores, yet LLM-Blender can reach similar scores more efficiently. This is particularly evident in longer tasks (the bottom two rows), although LLM-Blender does not achieve a perfect score for a few tasks (e.g., 9-2 and 1-3). Interestingly, we find that ReAct performs competitively in shorter tasks (e.g., 4-2 and 3-4), but most trajectories plateau at an intermediate score and fail to reach 100.
+								<br><br>
+								<b>Cost-effectiveness.</b> Despite SAGE invoking LLMs APIs twice for inference, its overall cost remains lower, as the result is a sequence of actions typically containing about 5 actions. In comparison, SayCan and ReAct require 1,855.84 and 1,971.03 tokens per action (tpa) respectively, while Reflexion necessitates 2,983.46 tpa. LLM-Blender, on the other hand, only uses 757.07 tpa. Given its superior performance, LLM-Blender proves more cost-effective than other LLM-based methods. This efficiency is primarily attributed to invoking LLMs only when needed (courtesy of our strong SWIFT module) and the action buffer mechanism.
+
+								</div>
+							</div>
+						</div>
+						
+					</div> <!-- /.box-content -->
+
+
+						
+				</div> <!-- /.col-md-8 -->
+				
+				
+
+			</div> <!-- /.row -->
+
+		<div class="box-content">
+
+							<div class="row">
+									<div class="col-md-12" id="misc">
+										<h4 class="widget-title"><span><b>Misc.</b></span></h4>
+		<div style="font-size:15px"> 
+			 <h4><b>Citation</b></h4>
+
+<pre><code> 
+</code></pre>
+		</div>
+	</div>
+</div>
+
+</div>
+
+		</div> <!-- /.container -->
+
+
+		 
+		<footer class="site-footer">
+			<div class="main-footer">
+
+				<div class="container"> 
+					<p class="small-text">Contact: Bill Yuchen Lin [yuchenl@allenai.org]
+								</p> 
+					<div class="copyright">
+						<div class="row">
+							<div class="col-md-6 col-sm-6">
+								
+							</div> <!-- /.col-md-6 -->
+
+						</div> <!-- /.row -->
+					</div> <!-- /.copyright -->
+				</div> <!-- /.container -->
+			</div> <!-- /.main-footer -->
+		</footer> <!-- /.site-footer -->
+
+		<a href="#" id="top-link" onclick="window.scrollTo(0, 0);" class="fa fa-angle-up"></a>
+	
+        <!-- JavaScripts -->
+        <script src="js/bootstrap.min.js"></script>
+        <script src="js/min/plugins.min.js"></script>
+        <script src="js/min/custom.min.js"></script>
+		 
+		
+    </body>
+</html>

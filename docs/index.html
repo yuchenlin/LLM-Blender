@@ -352,7 +352,7 @@ bottom: .5em;
 										The PairRanker module is a BERT-structure encoder, fine-tuned on a DeBERTa-V3-Large (304m) checkpoint using in an pairwise manner through attention mechanism. It encodes the input text with two candidates using a single encoder and output two prediction scores for these two candidates respectively. A better candidate is expected to get a higher score. Unlike prior method using invividual scoring, PairRanker could capture the subtle difference between candidates through bi-directional attention mechanism, and thus is more robust to the quality of candidates.
 									</li>
 									<li>
-										The GenFuser module is a transformer encoder-decoder structure, fine-tuned on a Flan-T5-xl (3b) checkpoint using groud-truth outputs from ChatGPT, GPT-4 and human as labels. It encodes the input text and the a few candidates using a single encoder and then decodes the fused output using a single decoder. Instead of simply put all the candidates to the encoder, we only put the top-ranked candidates to the encoder to avoid unnecessary noise from the bad candidates, which is the key to the success of LLM-Blender.
+										The GenFuser module is a transformer encoder-decoder structure, fine-tuned on a Flan-T5-xl (3b) checkpoint using ground-truth outputs from ChatGPT, GPT-4 and human as labels. It encodes the input text and the a few candidates using a single encoder and then decodes the fused output using a single decoder. Instead of simply put all the candidates to the encoder, we only put the top-ranked candidates to the encoder to avoid unnecessary noise from the bad candidates, which is the key to the success of LLM-Blender.
 									</li>
 									<li>
 										By combining PairRanker and GenFuser in a single framework, LLM-Blender could leverage the strengths of both ranking and fusing generation. It first ranks the candidates in a pairwise manner and then fuses the top-ranked candidates via a sequence-to-sequence model. This hybrid ensembling framework is more robust to the quality of candidates and could generate better output than prior methods.
@@ -383,7 +383,7 @@ bottom: .5em;
 						<div class="row">
 							<div class="col-md-12" id="eval">
 								<h4 class="widget-title"><span class="section"><b><a><em>Evaluation</em></a></b></span></h4>
-								<div class="col-md-12"  align="center"> <img width="80%" src="eval.png" alt="USC/ISI">  <br /><br />
+								<div class="col-md-12"  align="center"> <img width="80%" src="llm_results.png" alt="USC/ISI">  <br /><br />
 								</div>
 
 

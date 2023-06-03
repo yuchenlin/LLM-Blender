@@ -167,19 +167,18 @@ bottom: .5em;
 						<div class="col-md-8 col-sm-4" id="top">
 							<h1 style="color: #183385"><b>LLM-Blender</b></em></h1>
 							<span style="color:#183385; font-size: 16pt; font-family: Roboto, Helvetica, Arial, Heveltica Neue, sans-serif; font-weight: 500;"> 
-								A Generative Agent with Fast and Slow Thinking for Complex Interactive Tasks
+								An Innovative ensembling framework to
+								attain consistently superior performance by
+								leveraging the diverse strengths and weaknesses
+								of multiple open-source large language
+								models (LLMs).
 							
 							</span> <br>
 
 							<span style="color:#183385; font-size: 14pt; font-family: Roboto, Helvetica, Arial, Heveltica Neue, sans-serif">
-								<br> <b>Authors:</b> <a class="name" target="_blank" href="http://yuchenlin.xyz">Bill Yuchen Lin</a>, 
-								Yicheng Fu, Karina Yang, 
-								<a href="http://prithvirajva.com" target="_blank"> Prithviraj Ammanabrolu</a>, 
-								<a href="https://users.soe.ucsc.edu/~hannahbrahman/" target="_blank"> Faeze Brahman</a>, 
-								<a href="http://tartrl.cn/people/huangshiyu/" target="_blank"> Shiyu Huang</a>,
-								<a target="_blank" href="https://allenai.org/team/chandrab/">Chandra Bhagavatula</a>, 
-								<a target="_blank" href="https://homes.cs.washington.edu/~yejin/">Yejin Choi</a>, 
-								<a target="_blank" href="http://ink-ron.usc.edu/xiangren/">Xiang Ren</a><br>
+								<br> <b>Authors:</b> <a class="name" target="_blank" href="https://jdf-prog.github.io/">Dongfu Jiang</a>, 
+								<a class="name" target="_blank" href="http://yuchenlin.xyz">Bill Yuchen Lin</a>, 
+								<a class="name" target="_blank" href="http://ink-ron.usc.edu/xiangren/">Xiang Ren</a><br>
 							</span>
 							<br>
 						</div> 
@@ -236,24 +235,29 @@ bottom: .5em;
 								<h4 class="widget-title"><span class="section"><a href="#about" ><b><em>Introduction</em></b></a></span></h4>
 								<div class="col-md-12">  
 										<ul style="font-size:18px; color:#0b32a7b4;">
-											<li>We introduce <b>LLM-Blender</b>, a novel agent framework inspired by the <a href="https://en.wikipedia.org/wiki/Dual_process_theory" target="_blank">dual-process theory</a> of human cognition, designed to excel in action planning for complex interactive reasoning tasks. LLM-Blender integrates the strengths of behavior cloning and prompting large language models (LLMs) to enhance task completion performance. </li>
-											<li>The framework comprises two primary modules: the <b>Swift</b> module, representing fast and intuitive thinking, and the <b>Sage</b> module, emulating deliberate thought processes.  The Swift module is a small encoder-decoder LM fine-tuned on the oracle agent's action trajectories (i.e., <a href="https://sites.google.com/view/icml2018-imitation-learning/" target="_blank">imitation learning / behavior cloning</a>), while the Sage module employs LLMs such as <a href="https://openai.com/research/gpt-4" target="_blank">GPT-4</a> for subgoal planning and grounding. We develop a heuristic method to harmoniously integrate the two modules, resulting in a more efficient and robust problem-solving process. </li>
-
-											<li>In 30 tasks from the <a href="https://sciworld.apps.allenai.org" target="_blank"><b>ScienceWorld</b></a> benchmark, <b>LLM-Blender</b> significantly outperforms other methods such as <a style="color:#0b32a7b4; font-weight:600" href="https://say-can.github.io" target="_blank">SayCan</a>, <a style="color:#0b32a7b4; font-weight:600" href="https://react-lm.github.io" target="_blank">ReAct</a>, and <a style="color:#0b32a7b4; font-weight:600" href="https://arxiv.org/abs/2303.11366" target="_blank">Reflexion</a>, demonstrating its effectiveness in solving complex real-world tasks.</li>
+											<li>
+												We introduce <b>LLM-Blender</b>, an innovative ensembling framework to attain consistently superior performance by leveraging the diverse strengths and weaknesses of multiple open-source large language models (LLMs). LLM-Blender cut the weaknesses through ranking and integrate the strengths through fusing generation to enhance the capability of LLMs.
+											</li>
+											<li>
+												Our framework consists of two complementary modules: <b>PairRanker</b> and <b>GenFuser</b>, addressing the observation that optimal LLMs for different examples can significantly vary.
+												<b>PairRanker</b> eemploys a specialized pairwise comparison method to distinguish subtle differences between candidate outputs. <b>GenFuser</b> aims to merge the top-ranked candidates from the aggregation of PairRanker's pairwise comparisons into an improved output by capitalizing on their strengths and mitigating their weaknesses.
+											</li>
+											<li>
+												To facilitate large-scale evaluation, we introduce a benchmark dataset, <b>MixInstruct</b>, which is a mixture of multiple instruction datasets featuring oracle pairwise comparisons for testing purposes. Our <b>LLM-Blender</b> significantly surpasses the best LLMs and baseline ensembling methods across various metrics on <b>MixInstruct</b>, establishing a substantial performance gap. 
+											</li>
 										</ul>					 
 									<p style="text-align: left;"> 
 											 	<font color="blue"><b>Links:</b></font> &nbsp; 
 									
 									<a class="btna" target="_blank" href="https://arxiv.org/abs/2305.17390">[Paper]</a> &nbsp;
-									<a class="btna" target="_blank" href="https://github.com/yuchenlin/LLM-Blender/">[Code]</a> &nbsp;
-									<a class="btna" target="_blank" href="https://github.com/allenai/ScienceWorld">[ScienceWorld]</a> &nbsp;
+									<a class="btna" target="_blank" href="https://github.com/yuchenlin/LLM-Blender">[Code]</a> &nbsp;
+									<a class="btna" target="_blank" href="https://huggingface.co/datasets/llm-blender/mix-instruct">[Dataset]</a> &nbsp;
+									<a class="btna" target="_blank" href="https://huggingface.co/llm-blender">[Models]</a> &nbsp;
 									<br />
 									<font color="blue"><b>Teams:</b></font> &nbsp; 
 									<a class="btna" target="_blank" href="https://mosaic.allenai.org">[AI2-Mosaic]</a> &nbsp; 
 									<a class="btna" target="_blank" href="http://inklab.usc.edu/">[USC-INK]</a> &nbsp; 
-
 									<br>
- 
 									</p>  
 									
 								</div>
@@ -281,7 +285,7 @@ bottom: .5em;
 						<div class="row">
 							<div class="col-md-12" id="bg">
 								<h4 class="widget-title"><span class="section"><b><a><em>Background</em></a></b></span></h4>
-								<div class="col-md-12"  align="center"> <img width="100%" src="methods.png" alt="USC/ISI">
+								<div class="col-md-12"  align="center"> <img width="100%" src="pairranker.png" alt="USC/ISI">
 									<br> &nbsp;<br>
 								</div>
 								<div>
@@ -291,14 +295,24 @@ bottom: .5em;
 									</p>
 									<div class="col-md-12" id="comp_more" style="display: none;">
 
-										There are three primary approaches to developing agents capable of addressing complex interactive reasoning tasks: (1) deep reinforcement learning (RL), (2) behavior cloning (BC) through sequence-to-sequence (seq2seq) learning, and (3) prompting large language models (LLMs). In addition to conventional RL methods such as DRRN, interactive reasoning can be framed as a seq2seq task, where the input text serves as the current state description and the output text corresponds to the subsequent action. By leveraging numerous gold trajectories generated by oracle agents, it becomes feasible to fine-tune Transformer models, like T5, to effectively imitate the behavior of these oracle agents. Recent studies have also demonstrated that generative agents based on prompting LLMs, such as GPT-4, can produce reasonable plans and actions. <br/><br/>
+										The open-source <b>Large Language Models</b> exhibit diverse strengths and weaknesses due to variations in data, architectures, and hyperparameters, making them complementary to each other. There are two primary approaches of ensembling the multiple output candidates from various language models: (1) <b>Ranking</b> and (2) <b>Fusing Generation</b>. Ranking aims to select the best one from the candidate pool via training a critic model. Fusing Generation aims to merge the candidates into a better output by framing the task as a sequence-to-sequence learning problem. Recent studies have demonstrated ranking and fusing generation could improve the performance of a single language model.
+										<br/><br/>
 										<ul>
-											<li> <b><a href="https://say-can.github.io" target="_blank">SayCan</a></b> is a straightforward agent that integrates an LLM with a value function of underlying policies regarding grounding affordances (i.e., the feasibility of an action in the environment). We need to provide the history and current environment as textual inputs to LLMs for generating a ranked list of action candidates. This action list is then reranked based on a value function.</li>
-											<li> <b><a href="https://react-lm.github.io" target="_blank">ReAct</a></b> presents a virtual ‘think’ action, enabling LLMs to generate sub-goals during action planning. This approach requires human annotators to supply examples of correct subgoals for each task type, employing few-shot in-context learning to teach LLMs when and how to ‘think’ in order to plan subsequent subgoals, in addition to providing complete action trajectories.</li>
-											<li> <b><a href="https://arxiv.org/abs/2303.11366">Reflexion</a></b>, a recent work building on ReAct, proposes a multi-round approach enabling LLMs to use the history of previously failed rounds to refine their planning for the next round. This self-reflection mechanism helps LLMs improve after each failed attempt. However, this may not be practical in real-world applications for many tasks, as actions in failed trials can be irrecoverable.</li>
-											<li> <b class="btna">Limitations</b>: All three methods require a new LLM inference at each time step to predict the next immediate action, resulting in inefficient and costly agents. ReAct and Reflexion require  annotations of correct subgoals for each unseen task. Moreover, it is difficult to generalize Reflexion to real world where trial-and-error approaches can be infeasible for embodied tasks.
+											<li> <b><a href="https://github.com/awslabs/mlm-scoring" target="_blank">MLM-Scoring</a></b> 
+												is a un-supervised ranking method which only encodes the candidate text using a pre-trained BERT and compute the pseudo-log-likelihood of masked tokens as the candidate score. 
 											</li>
-											<li> <b class="btna">LLM-Blender</b> (ours) is a hybrid agent framework, inspired by Fast and Slow thinking. In short, we use a smaller LM (e.g., T5) to perform imitation learning and only call LLMs (e.g., GPT-4) when it is necessary for planning. Check the next  for more details. </li>
+											<li> <b><a href="https://github.com/yixinL7/SimCLS" target="_blank">SimCLS</a></b> 
+												is a supervised ranking method which encodes the input text and the candidate text using a single encoder and compute the cosine similarity of their representations as the score of each candidate text. It is trained using a marginal-ranking loss to maximize the margin between the score of the best candidate and the score of the worst candidate.
+											</li>
+											<li> <b><a href="https://github.com/Ravoxsg/SummaReranker" target="_blank">SummaReranker</a></b>, another supervised ranking method which encodes the input text and the candidate text using a single cross-encoder and adopt a mixture-of-experts layer for various metrics signals. It takes the average of the prediction scores for these metrics as the score of each candidate text. It is trained using a binary cross entropy loss to only maximize the score of the best candidate and minimize the score of all the other candidates.
+											</li>
+											<li> <b><a href="https://aclanthology.org/2022.emnlp-main.581/">SummaFusion</a></b> is a fusing generation method that applies the fusion-in-decoder artecture to fuse all the candidates into a better output. However, it does not filter out the bad candidates during the fusion which may lead to a worse output.
+											</li> 
+											<li> <b class="btna">Limitations</b>: 
+												All the three ranking method focused on <b>individually scoring</b> each candidate biased on the input text, and they never directly compare each candidate in a <b>pairwise manner</b>. Among the output candidates from LLMs, candidate differences can be quite <b>subtle</b>, as they are all produced by very sophisticated models and one may only be marginally better than another. Even for humans, it can be challenging to gauge candidate quality without direct comparison. And the current fusing generation method never <b>filter out</b> the bad candidates during the fusion which may lead to a worse output.
+											</li>
+											<li> <b class="btna">LLM-Blender</b> (ours) is a hybrid ensembling framework that combines the strengths of ranking and fusing generation. It first ranks the candidates in a <b>pairwise manner</b> and then fuses the <b>top-ranked candidates</b> via a sequence-to-sequence model. Check the next  for more details. 
+											</li>
 										  </ul>
 										</div>
 								</div>
@@ -316,7 +330,6 @@ bottom: .5em;
 
 			</div> <!-- /.row -->
 
-
 			<div class="row">
 			
 				<div class="col-md-12">
@@ -324,7 +337,7 @@ bottom: .5em;
 						<div class="row">
 							<div class="col-md-12" id="approach">
 								<h4 class="widget-title"><span class="section"><b><a><em>LLM-Blender Framework</em></a></b></span></h4>
-								<div class="col-md-12"  align="center"> <img width="100%" src="ss_pipeline.png" alt="USC/ISI">  <br /><br />
+								<div class="col-md-12"  align="center"> <img width="100%" src="llm_blender.png" alt="USC/ISI">  <br /><br />
 								</div>
 
 
@@ -333,12 +346,17 @@ bottom: .5em;
 								<a onclick="toggle(this, 'framework_more')" class="btna">[show more]</a>
 							</p>
 							<div class="col-md-12" id="framework_more" style="display: none;">
-								<b>LLM-Blender consists of two primary modules: the SWIFT module and the SAGE module.  </b> <br><br>
+								<b>LLM-Blender consists of two primary modules: the PairRanker module and the GenFuser module.  </b> <br><br>
 								<ul>
-									<li>The SWIFT module is a small encoder-decoder LM, fine-tuned on a T5-large (770m) checkpoint using the searched oracle trajectories of training tasks. It encodes short-term memory components, such as previous actions, observations, visited locations, as well as the current environment state. Then, it decodes the next individual action. This module simulates the fast, intuitive thinking characteristic of System 1.</li>
 									<li>
-										The SAGE module, representing the deliberate thinking of System 2, utilizes LLMs, such as GPT-4, and is structured around two prompting stages: planning and grounding. In the planning stage, we prompt LLMs to locate necessary items, plan and track subgoals, as well as detect and fix potential exceptions and mistakes. In the grounding stage, we focus on utilizing LLMs to transform the output subgoals derived from the planning stage into a sequence of actions by demonstrating potential action templates. Unlike prior methods, where LLMs only generate the next immediate action, our procedures engage in longer-term action planning. </li>
-									<li>To harmoniously integrate the SWIFT and SAGE modules, we developed a heuristic algorithm that determines when to (de)activate the SAGE module and how to combine the outputs effectively with an action buffer mechanism.</li>
+										The PairRanker module is a BERT-structure encoder, fine-tuned on a DeBERTa-V3-Large (304m) checkpoint using in an pairwise manner through attention mechanism. It encodes the input text with two candidates using a single encoder and output two prediction scores for these two candidates respectively. A better candidate is expected to get a higher score. Unlike prior method using invividual scoring, PairRanker could capture the subtle difference between candidates through bi-directional attention mechanism, and thus is more robust to the quality of candidates.
+									</li>
+									<li>
+										The GenFuser module is a transformer encoder-decoder structure, fine-tuned on a Flan-T5-xl (3b) checkpoint using groud-truth outputs from ChatGPT, GPT-4 and human as labels. It encodes the input text and the a few candidates using a single encoder and then decodes the fused output using a single decoder. Instead of simply put all the candidates to the encoder, we only put the top-ranked candidates to the encoder to avoid unnecessary noise from the bad candidates, which is the key to the success of LLM-Blender.
+									</li>
+									<li>
+										By combining PairRanker and GenFuser in a single framework, LLM-Blender could leverage the strengths of both ranking and fusing generation. It first ranks the candidates in a pairwise manner and then fuses the top-ranked candidates via a sequence-to-sequence model. This hybrid ensembling framework is more robust to the quality of candidates and could generate better output than prior methods.
+									</li>
 								</ul>
 								 
 								</div>
@@ -374,8 +392,12 @@ bottom: .5em;
 								<a onclick="toggle(this, 'eval_more')" class="btna">[show more]</a>
 							</p>
 							<div class="col-md-12" id="eval_more" style="display: none;">
-								<b>Main Results </b> This table compares the performance of various agents across 30 types of tasks. Detailed descriptions of each task type can be found in the ScienceWorld paper and our appendix. It is evident that LLM-based methods outperform conventional agents due to their superior generalization ability, albeit at a higher deployment cost. The behavior cloning model TDT (11b) performs on par with DRRN, but with greater efficiency in learning and inference. In contrast, our SWIFT-only agent (770m) achieves an overall performance of 49.22, which we attribute to its balanced training data and the use of a sliding window for longer action histories.
-								ReAct demonstrates a noticeable improvement over SayCan for short and medium tasks, owing to its subgoal annotations for in-context learning and the inclusion of ‘think’ actions. Reflexion surpasses ReAct in shorter tasks; however, comparing Reflexion with other agents is not entirely fair. Reflexion can run up to four rounds, while the others are limited to one round. This discrepancy is particularly unfair for tasks involving multiple-choice scenarios. Nevertheless, we include Reflexion’s results to analyze the potential of such methods.
+								<b>Main Results </b> 
+								This table compares the performance of various LLMs on our proposed MixInstruct dataset, along with the oracle analysis of auto metrics (BARTScore, etc.), ranker's performance and our LLM-BLender's performance.
+								Here <b>GPT-Rank</b> is computed by rank the candidates by their number of winning times in the pairwise comparisons from ChatGPT, which we take as the ground-truth comparison results in our experiments.
+								It is evident that different LLMs vary significantly in their performance, show a diverse set of strengths and weaknesses, as represented by GPT-Rank.
+								Our PairRanker module effectively improve the average GPT-Rank to 3.20 compared to the best model Open Assistant (3.90) and Vicuna (4.13), proving the effectiveness of ranking for LLMs. It also outperforms all the other rankers, including the auto metrics's performance, showcasing great capability of pairwise comparison paradigm.
+								Furthermore, our LLM-Blender framwork manages to generate candidates not only with the highest scores in auto metrics like BARTScore (79.09), but also with better correlation with ChatGPT evaluation, represented by the best GPT-Rank (3.01), percentage of winning times compared to Vicuna (70.73) and Open Assistant (77.72), and the percentage that is viewed as top-3 by ChatGPT (68.59). These overall results prove the effectiveness of our LLM-Blender framework.
 								</div>
 							</div>
 						</div>
@@ -398,7 +420,7 @@ bottom: .5em;
 						<div class="row">
 							<div class="col-md-12" id="analysis">
 								<h4 class="widget-title"><span class="section"><b><a><em>Analysis</em></a></b></span></h4>
-								<div class="col-md-12"  align="center"> <img width="100%" src="curves_all.png" alt="USC/ISI">  <br /><br />
+								<div class="col-md-12"  align="center"> <img width="100%" src="tradeoff.png" alt="USC/ISI">  <br /><br />
 								</div>
 
 
@@ -407,10 +429,9 @@ bottom: .5em;
 								<a onclick="toggle(this, 'analysis_more')" class="btna">[show more]</a>
 							</p>
 							<div class="col-md-12" id="analysis_more" style="display: none;">
-								<b>Efficiency</b>. To thoroughly examine the efficiency of agents across all task types, we use Figure 3 to visualize the average trajectories of the first three testing variations for each task involving LLM-Blender, ReAct, and the oracle agent. We arrange the tasks based on their average lengths of oracle trajectories (*Len in Table 1). We observe that oracle trajectories consistently achieve perfect scores, yet LLM-Blender can reach similar scores more efficiently. This is particularly evident in longer tasks (the bottom two rows), although LLM-Blender does not achieve a perfect score for a few tasks (e.g., 9-2 and 1-3). Interestingly, we find that ReAct performs competitively in shorter tasks (e.g., 4-2 and 3-4), but most trajectories plateau at an intermediate score and fail to reach 100.
-								<br><br>
-								<b>Cost-effectiveness.</b> Despite SAGE invoking LLMs APIs twice for inference, its overall cost remains lower, as the result is a sequence of actions typically containing about 5 actions. In comparison, SayCan and ReAct require 1,855.84 and 1,971.03 tokens per action (tpa) respectively, while Reflexion necessitates 2,983.46 tpa. LLM-Blender, on the other hand, only uses 757.07 tpa. Given its superior performance, LLM-Blender proves more cost-effective than other LLM-based methods. This efficiency is primarily attributed to invoking LLMs only when needed (courtesy of our strong SWIFT module) and the action buffer mechanism.
-
+								<b>Effectiveness on decoding reranking scenario</b>
+								<b>Efficiency</b> To thoroughly examine the efficiency tradeoff of the three scoring method, <b>MaxLogits</b>, <b>MaxWins</b>, and <b>Bubble</b>, we conduct the efficiency tradeoff analysis on three conventional tasks. The findings indicate that the bubble run approach achieves superior performance at a minimal cost of N-1 comparisons. However, as the number of comparisons increases, the MaxLogits scoring methods outperform the bubble run method beyond a certain threshold. Consequently, in most cases, the bubble run method is a more efficient approach to employ. If one desires to pursue incremental improvements through additional comparisons, the MaxLogits method can also be employed in conjunction with parallel computing.
+								
 								</div>
 							</div>
 						</div>

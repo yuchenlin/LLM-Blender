@@ -4,14 +4,16 @@
      <img src=./docs/logo-ai2.svg width=35%/> &nbsp; &nbsp; <img src=./docs/logo-usc.png width=25%/>
 </div>
 
-<a target="_blank" href="https://github.com/yuchenlin/LLM-Blender">
-                                        <img style="height:22pt" src="https://img.shields.io/badge/-Code-green?style=flat&logo=github">
-                                      </a><a target="_blank" href="https://huggingface.co/datasets/llm-blender/mix-instruct">
-                                        <img style="height:22pt" src="https://img.shields.io/badge/-🤗%20Dataset-red?style=flat"></a><a target="_blank" href="https://huggingface.co/llm-blender">
-                                        <img style="height:22pt" src="https://img.shields.io/badge/-🤗%20Models-red?style=flat">
-                                      </a><a target="_blank" href="https://twitter.com/billyuchenlin/status/1663603372220616704?s=20">
-                                        <img style="height:22pt" src="https://img.shields.io/badge/-Tweet-blue?style=flat&logo=twitter">
-                                      </a>
+<a target="_blank" href="https://yuchenlin.xyz/files/blender.pdf">
+<img style="height:22pt" src="https://img.shields.io/badge/-Paper-black?style=flat&logo=arxiv">
+</a><a target="_blank" href="https://github.com/yuchenlin/LLM-Blender">
+<img style="height:22pt" src="https://img.shields.io/badge/-Code-green?style=flat&logo=github">
+</a><a target="_blank" href="https://huggingface.co/datasets/llm-blender/mix-instruct">
+<img style="height:22pt" src="https://img.shields.io/badge/-🤗%20Dataset-red?style=flat"></a><a target="_blank" href="https://huggingface.co/llm-blender">
+<img style="height:22pt" src="https://img.shields.io/badge/-🤗%20Models-red?style=flat">
+</a><a target="_blank" href="https://twitter.com/billyuchenlin/status/1663603372220616704?s=20">
+<img style="height:22pt" src="https://img.shields.io/badge/-Tweet-blue?style=flat&logo=twitter">
+</a>
 
 ## Overview
 

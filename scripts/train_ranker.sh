@@ -13,7 +13,7 @@ dataset="mixinstruct"
 backbone_type="roberta" # "deberta" or "roberta"
 backbone_name="roberta-large" # "microsoft/deberta-v3-large" or "roberta-large"
 n_gpu=1
-reranker="SummaReranker" # "PairRanker" or "SummaReranker" or "SimCLS"
+ranker="Summaranker" # "PairRanker" or "Summaranker" or "SimCLS"
 candidate_model="" # separted by comma. Empty string for all models
 candidate_decoding_method="" # separted by comma. Empty string for all methods
 n_candidates=-1 # number of candidates to generate
@@ -64,23 +64,23 @@ train_data_path="./data/${dataset}/train_data_prepared.json"
 dev_data_path="./data/${dataset}/val_data_prepared.json"
 test_data_path="./data/${dataset}/test_data_prepared.json"
 
-if [[ $reranker = "PairRanker" ]]; then
+if [[ $ranker = "PairRanker" ]]; then
     echo "Using PairRanker"
     ranker_type="crosscompare"
     if [ $do_inference = "True" ]; then
         inference_mode="full" # do full for inference for its better performance
         if [ $inference_mode = "full" ]; then
-            run_name="test_${dataset}_${reranker}_full_comparison"
+            run_name="test_${dataset}_${ranker}_full_comparison"
         elif [ $inference_mode = "bubble" ]; then
-            run_name="test_${dataset}_${reranker}_bubble_comparison"
+            run_name="test_${dataset}_${ranker}_bubble_comparison"
         fi
         do_train="False"
         do_eval="False"
         do_test="True"
-        load_checkpoint="./outputs/${ranker_type}/${backbone_name}/train_${checkpoint_trained_dataset}_${reranker}${run_name_postfix}/checkpoint-best"
+        load_checkpoint="./outputs/${ranker_type}/${backbone_name}/train_${checkpoint_trained_dataset}_${ranker}${run_name_postfix}/checkpoint-best"
     else
         inference_mode="bubble" # do bubble for inference for its faster speed
-        run_name="train_${dataset}_${reranker}"
+        run_name="train_${dataset}_${ranker}"
         do_train="True"
         do_eval="True"
         do_test="True"
@@ -130,17 +130,17 @@ if [[ $reranker = "PairRanker" ]]; then
         --reduce_type  "linear" \
         --overwrite_output_dir True \
 
-elif [[ $reranker = "SummaReranker" ]]; then
-    echo "Using SummaReranker"
-    ranker_type="summareranker"
+elif [[ $ranker = "Summaranker" ]]; then
+    echo "Using Summaranker"
+    ranker_type="summaranker"
     if [ $do_inference = "True" ]; then
-        run_name="debug_${dataset}_${reranker}"
+        run_name="debug_${dataset}_${ranker}"
         do_train="False"
         do_eval="False"
         do_test="True"
-        load_checkpoint="./outputs/${ranker_type}/${backbone_name}/train_${checkpoint_trained_dataset}_${reranker}${run_name_postfix}/checkpoint-best"
+        load_checkpoint="./outputs/${ranker_type}/${backbone_name}/train_${checkpoint_trained_dataset}_${ranker}${run_name_postfix}/checkpoint-best"
     else
-        run_name="train_${dataset}_${reranker}"
+        run_name="train_${dataset}_${ranker}"
         do_train="True"
         do_eval="True"
         do_test="True"
@@ -188,17 +188,17 @@ elif [[ $reranker = "SummaReranker" ]]; then
         --sub_sampling_mode "top_bottom" \
         --overwrite_output_dir True \
 
-elif [[ $reranker = "SimCLS" ]]; then
+elif [[ $ranker = "SimCLS" ]]; then
     echo "Using SimCLS"
     ranker_type="dual"
     if [ $do_inference = "True" ]; then
-        run_name="debug_${dataset}_${reranker}"
+        run_name="debug_${dataset}_${ranker}"
         do_train="False"
         do_eval="False"
         do_test="True"
-        load_checkpoint="./outputs/${ranker_type}/${backbone_name}/train_${checkpoint_trained_dataset}_${reranker}${run_name_postfix}/checkpoint-best"
+        load_checkpoint="./outputs/${ranker_type}/${backbone_name}/train_${checkpoint_trained_dataset}_${ranker}${run_name_postfix}/checkpoint-best"
     else
-        run_name="train_${dataset}_${reranker}"
+        run_name="train_${dataset}_${ranker}"
         do_train="True"
         do_eval="True"
         do_test="True"
@@ -246,5 +246,5 @@ elif [[ $reranker = "SimCLS" ]]; then
         --overwrite_output_dir True \
 
 else
-    echo "Unknown reranker: ${reranker}"
+    echo "Unknown ranker: ${ranker}"
 fi

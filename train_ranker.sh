@@ -6,14 +6,13 @@
 #SBATCH --qos=general
 
 nvidia-smi
-cd ../
 
 # <== MODIFY THE FOLLOWING PARAMETERS ==>
 dataset="mixinstruct"
-backbone_type="roberta" # "deberta" or "roberta"
-backbone_name="roberta-large" # "microsoft/deberta-v3-large" or "roberta-large"
+backbone_type="deberta" # "deberta" or "roberta"
+backbone_name="microsoft/deberta-v3-large" # "microsoft/deberta-v3-large" or "roberta-large"
 n_gpu=1
-ranker="Summaranker" # "PairRanker" or "Summaranker" or "SimCLS"
+ranker="PairRanker" # "PairRanker" or "Summaranker" or "SimCLS"
 candidate_model="" # separted by comma. Empty string for all models
 candidate_decoding_method="" # separted by comma. Empty string for all methods
 n_candidates=-1 # number of candidates to generate
@@ -24,8 +23,8 @@ fp16=True # whether to use fp16
 
 max_train_data_size=-1 # -1 means no limit
 max_eval_data_size=-1 # -1 means no limit
-max_predict_data_size=-1 # -1 means no limit
-do_inference=False # whether do inference instead of training, i.e. do test
+max_predict_data_size=50 # -1 means no limit
+do_inference=True # whether do inference instead of training, i.e. do test
 # for inference, sometimes you want to use a checkpoint trained on another dataset
 # to do inference on a dataset, you can set the checkpoint_trained_dataset to the dataset
 # by default, it is set to the dataset you are doing inference on
@@ -66,9 +65,9 @@ test_data_path="./data/${dataset}/test_data_prepared.json"
 
 if [[ $ranker = "PairRanker" ]]; then
     echo "Using PairRanker"
-    ranker_type="crosscompare"
+    ranker_type="pairranker"
     if [ $do_inference = "True" ]; then
-        inference_mode="full" # do full for inference for its better performance
+        inference_mode="bubble" # do full for inference for its better performance
         if [ $inference_mode = "full" ]; then
             run_name="test_${dataset}_${ranker}_full_comparison"
         elif [ $inference_mode = "bubble" ]; then
@@ -77,7 +76,8 @@ if [[ $ranker = "PairRanker" ]]; then
         do_train="False"
         do_eval="False"
         do_test="True"
-        load_checkpoint="./outputs/${ranker_type}/${backbone_name}/train_${checkpoint_trained_dataset}_${ranker}${run_name_postfix}/checkpoint-best"
+        # load_checkpoint="./outputs/${ranker_type}/${backbone_name}/train_${checkpoint_trained_dataset}_${ranker}${run_name_postfix}/checkpoint-best"
+        load_checkpoint="checkpoint-best"
     else
         inference_mode="bubble" # do bubble for inference for its faster speed
         run_name="train_${dataset}_${ranker}"
@@ -127,7 +127,6 @@ if [[ $ranker = "PairRanker" ]]; then
         --num_neg 5 \
         --loss_type "instructgpt" \
         --sub_sampling_mode "all_pair" \
-        --reduce_type  "linear" \
         --overwrite_output_dir True \
 
 elif [[ $ranker = "Summaranker" ]]; then

@@ -94,7 +94,7 @@ def cor_set_based(hypo_ranks, ref_ranks):
     return sims.mean()
 
 COR_MAPS = {
-    "corrcoef": cor_pearson,
+    "pearson": cor_pearson,
     "spearman": cor_spearman,
     "spearman_footrule": cor_spearman_footrule,
     "set_based": cor_set_based,

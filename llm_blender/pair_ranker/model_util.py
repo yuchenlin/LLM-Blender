@@ -6,7 +6,6 @@ from .ranker import (
     SummaReranker,
     DualReranker,
     CrossCompareReranker,
-    DualCompareReranker
 )
 from .collator import (
     DualCollator,
@@ -80,20 +79,17 @@ def build_tokenizer(model_name, **kwargs):
         tokenizer.pad_token_id = tokenizer.eos_token_id
     return tokenizer
 
-def build_reranker(ranker_type, model_type, model_name, cache_dir, config, tokenizer=None):
-    reranker = None
+def build_ranker(ranker_type, model_type, model_name, cache_dir, config, tokenizer):
+    ranker = None
     pretrained_model = build_pretrained_model(model_type, model_name, cache_dir=cache_dir)
-    pretrained_model.resize_token_embeddings(config["new_num_tokens"])
+    pretrained_model.resize_token_embeddings(len(tokenizer))
     if ranker_type == "summareranker":
-        reranker = SummaReranker(pretrained_model, config, tokenizer)
+        ranker = SummaReranker(pretrained_model, config, tokenizer)
     elif ranker_type == "dual":
-        reranker = DualReranker(pretrained_model, config, tokenizer)
-    elif ranker_type == "crosscompare":
-        reranker = CrossCompareReranker(pretrained_model, config, tokenizer)
-    elif ranker_type == "dualcompare":
-        reranker = DualCompareReranker(pretrained_model, config, tokenizer)
-
-    return reranker
+        ranker = DualReranker(pretrained_model, config, tokenizer)
+    elif ranker_type == "pairranker":
+        ranker = CrossCompareReranker(pretrained_model, config, tokenizer)
+    return ranker
 
 def build_collator(
     model_type:str,
@@ -108,7 +104,7 @@ def build_collator(
         return SCRCollator(source_max_length, tokenizer, candidate_max_length, source_prefix, candidate1_prefix)
     elif model_type == "dual":
         return DualCollator(source_max_length, tokenizer, candidate_max_length, source_prefix, candidate1_prefix)
-    elif model_type == "crosscompare":
+    elif model_type == "pairranker":
         return CrossCompareCollator(source_max_length, tokenizer, candidate_max_length, source_prefix, candidate1_prefix, candidate2_prefix)
     else:
         raise ValueError(f"model_type {model_type} not supported")

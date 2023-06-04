@@ -4,12 +4,13 @@ import numpy as np
 import os
 import wandb
 import logging
+import json
 from transformers.trainer import Trainer
 from transformers.trainer_seq2seq import Seq2SeqTrainer
 from transformers import EvalPrediction
 from typing import Dict, List, Optional, Tuple, Union, Any
 from torch.utils.data import Dataset
-
+from dataclasses import asdict
 logger = logging.getLogger(__name__)
 
 class RerankerTrainer(Trainer):
@@ -27,7 +28,7 @@ class RerankerTrainer(Trainer):
         if self.is_world_process_zero():
             super().save_model(output_dir, **kwargs)
             model = self.model.module if hasattr(self.model, "module") else self.model
-            torch.save(model.args, os.path.join(output_dir, "config.bin"))
+            json.dump(asdict(model.args), open(os.path.join(output_dir, "ranker_config.json"), "w"), indent=4)
 
 class FiDTrainer(Seq2SeqTrainer):
     def compute_loss(self, model, inputs, return_outputs=False):
@@ -109,18 +110,20 @@ def compute_metrics_for_scr(eval_pred: EvalPrediction) -> Dict[str, float]:
 
 
 
-def compute_metrics_for_crosscompare(eval_pred: EvalPrediction) -> Dict[str, float]:
+def compute_metrics_for_pairranker(eval_pred: EvalPrediction) -> Dict[str, float]:
     """
     Compute metrics for the model.
     Args:
 
     """
     preds, labels = eval_pred # scores [batch_size, n_candidates, n_tasks]
-    logits, ranks_acc_dist, ranks_consistency_dist = preds
+    logits = preds
+    
     scores = labels # [batch_size, n_candidates, n_tasks]
     # scores = scores[:, :-1] # debug
     mean_scores = np.mean(scores, axis=-1) # [batch_size, n_candidates]
     batch_size, n_candidates, n_tasks = scores.shape
+
     # get the predicted best index
     if logits.shape[1] == 3:
         # bubble
@@ -134,9 +137,8 @@ def compute_metrics_for_crosscompare(eval_pred: EvalPrediction) -> Dict[str, flo
     # metric_scores, denormalized these scores
     pred_best_scores = scores[np.arange(batch_size), pred_best_idx]
     oracle_best_scores = scores[np.arange(batch_size), np.argmax(mean_scores, axis=-1)]
-    sel_acc = np.sum(ranks_acc_dist[:,:,0], dtype=np.int32).item() / np.sum(ranks_acc_dist, dtype=np.int32).item()
     metrics = {
-        "sel": {"acc": sel_acc},
+        "sel": {},
         "oracle": {},
         "top_beam": {},
         "gain": {},
@@ -148,25 +150,6 @@ def compute_metrics_for_crosscompare(eval_pred: EvalPrediction) -> Dict[str, flo
         metrics["gain"]["metric_{}".format(i+1)] = metrics["sel"]["metric_{}".format(i+1)] / metrics["top_beam"]["metric_{}".format(i+1)] - 1
     metrics['dev_score'] = metrics['sel']['metric_1']
 
-    num_consistency = np.sum(ranks_consistency_dist[:,:,0], dtype=np.int32).item()
-    num_in_consistency = np.sum(ranks_consistency_dist[:,:,1], dtype=np.int32).item()
-    metrics['consistency_mean'] = np.mean(
-        [1] * num_consistency + [0] * num_in_consistency
-    )
-    metrics['consistency_std'] = np.std(
-        [1] * num_consistency + [0] * num_in_consistency
-    )
-    reduced_ranks_consistency_dist = np.sum(ranks_consistency_dist, axis=0) # [n_candidates]
-    consistency_mean_per_rank = reduced_ranks_consistency_dist[:, 0] / np.clip(np.sum(reduced_ranks_consistency_dist, axis=-1), 1e-6, None)
-    metrics.update({
-        f"ranks_{i}_consistency": consistency_mean_per_rank[i] for i in range(len(consistency_mean_per_rank))
-    })
-    ranks_acc_dist = np.sum(ranks_acc_dist, axis=0) # [n_candidates, 2]
-    ranks_acc_dist_sum = np.clip(np.sum(ranks_acc_dist, axis=-1), 1e-6, None) # in case of 0
-    ranks_acc = ranks_acc_dist[:, 0] / ranks_acc_dist_sum
-    metrics.update({
-        f"rank_{i}_acc": ranks_acc[i] for i in range(len(ranks_acc))
-    })
     return metrics
 
 

@@ -72,7 +72,6 @@ class SCRCollator(object):
         self.cls_token = tokenizer.cls_token if tokenizer.cls_token is not None else tokenizer.bos_token
         assert self.sep_token is not None, 'sep_token is not found in the tokenizer'
         self.separate_token = self.sep_token
-        self.target_maxlength = self.candidate_maxlength
         self.source_prefix = source_prefix if source_prefix is not None else "<source>"
         self.candidate_prefix = candidate_prefix if candidate_prefix is not None else "<candidate>"
         self.model_max_length = min(tokenizer.model_max_length, self.source_maxlength+self.candidate_maxlength+3)
@@ -81,27 +80,22 @@ class SCRCollator(object):
     def __call__(self, batch):
         batch_size = len(batch)
         batch_source = [b['source'] for b in batch]
-        batch_target = [b['target'] for b in batch]
         batch_candidates = [b['candidates'] for b in batch]
-        batch_scores = [b['scores'] for b in batch]
+        if 'scores' in batch[0] and batch[0]['scores'] is not None:
+            batch_scores = torch.tensor([b['scores'] for b in batch])
 
         batch_source = get_truncated_text(batch_source, self.tokenizer, self.source_maxlength)
         batch_candidates = [get_truncated_text(c, self.tokenizer, self.candidate_maxlength) for c in batch_candidates]
-        batch_target = get_truncated_text(batch_target, self.tokenizer, self.target_maxlength)
 
         source_texts = [[self.separate_token.join([self.source_prefix+s, self.candidate_prefix+c, c]) for c in cands] for s, cands in zip(batch_source, batch_candidates)] # concatenate source and target
-        target_texts = [self.separate_token.join([self.source_prefix+s, self.candidate_prefix+t]) for s, t in zip(batch_source, batch_target)]
 
         encoded_source_text_ids, encoded_source_text_masks = encode_batch_text(source_texts, self.tokenizer, self.model_max_length) # source
-        encoded_target_text_ids, encoded_target_text_masks = encode_texts(target_texts, self.tokenizer, self.model_max_length) # target
 
 
         return {
             'input_ids' : encoded_source_text_ids,
             'attention_mask' : encoded_source_text_masks,
-            'target_ids' : encoded_target_text_ids,
-            'target_attention_mask' : encoded_target_text_masks,
-            'scores' : torch.tensor(batch_scores),
+            'scores' : batch_scores,
         }
 
 class DualCollator(object):
@@ -134,7 +128,11 @@ class DualCollator(object):
         batch_source = [b['source'] for b in batch]
         batch_target = [b['target'] for b in batch]
         batch_candidates = [b['candidates'] for b in batch]
-        batch_scores = [b['scores'] for b in batch]
+        if 'scores' in batch[0] and batch[0]['scores'] is not None:
+            batch_scores = torch.tensor([b['scores'] for b in batch])
+        else:
+            batch_scores = None
+        
 
         # add prefix
         batch_source = [self.source_prefix + s for s in batch_source]
@@ -153,7 +151,7 @@ class DualCollator(object):
             'target_attention_mask' : encoded_target_masks,
             "candidate_ids" : encoded_candidate_ids,
             "candidate_attention_mask" : encoded_candidate_masks,
-            'scores' : torch.tensor(batch_scores),
+            'scores' : batch_scores,
         }
 
 class CrossCompareCollator(object):
@@ -195,24 +193,21 @@ class CrossCompareCollator(object):
 
     def __call__(self, batch):
         batch_source = [self.source_prefix+b['source'] for b in batch]
-        batch_target = [b['target'] for b in batch]
         batch_candidates = [[self.candidate_prefix+cand for cand in b['candidates']] for b in batch]
         # substitute special token into space
         batch_source = [s.replace(self.sep_token, ' ') for s in batch_source]
-        batch_target = [t.replace(self.sep_token, ' ') for t in batch_target]
         batch_candidates = [[cand.replace(self.sep_token, ' ') for cand in cands] for cands in batch_candidates]
-
-        batch_scores = [b['scores'] for b in batch]
+        if 'scores' in batch[0] and batch[0]['scores'] is not None:
+            scores = torch.tensor([b['scores'] for b in batch])
+        else:
+            scores = None
+            
         source_ids, source_masks = encode_texts(batch_source, self.tokenizer, self.source_maxlength)
-        target_ids, target_masks = encode_texts(batch_target, self.tokenizer, self.candidate_maxlength)
         candidate_ids, candidate_masks = encode_batch_text(batch_candidates, self.tokenizer, self.candidate_maxlength)
 
-        scores = torch.tensor(batch_scores)
         return {
             "source_ids" : source_ids,
             "source_attention_mask" : source_masks,
-            "target_ids" : target_ids,
-            "target_attention_mask" : target_masks,
             "candidate_ids" : candidate_ids,
             "candidate_attention_mask" : candidate_masks,
             "scores" : scores,

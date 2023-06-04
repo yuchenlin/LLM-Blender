@@ -17,26 +17,29 @@ import logging
 from transformers import TrainingArguments
 from transformers.trainer_utils import PredictionOutput
 warnings.filterwarnings("ignore")
-from src.common.utils import (
+from llm_blender.common.utils import (
     str2bool,
     empty2None,
     seed_everything
 )
-from src.pair_ranker.trainer import (
-    compute_metrics_for_crosscompare,
+from llm_blender.pair_ranker.trainer import (
+    compute_metrics_for_pairranker,
     compute_metrics_for_scr
 )
-from src.pair_ranker.model_util import (
-    build_reranker,
+from llm_blender.pair_ranker.model_util import (
+    build_ranker,
     build_tokenizer,
     build_collator,
 )
-from src.pair_ranker.data import (
+from llm_blender.pair_ranker.data import (
     load_data,
     Dataset
 )
-from src.pair_ranker.trainer import (
+from llm_blender.pair_ranker.trainer import (
     RerankerTrainer,
+)
+from llm_blender.pair_ranker.config import (
+    RankerConfig,
 )
 
 def main(args):
@@ -81,21 +84,14 @@ def main(args):
         args.n_tasks = predict_dataset.n_tasks
 
     # set up model
-    config = {
-        "n_tasks": args.n_tasks,
-        "num_pos": args.num_pos,
-        "num_neg": args.num_neg,
-        "sub_sampling_ratio": args.sub_sampling_ratio,
-        "sub_sampling_mode": args.sub_sampling_mode,
-        "loss_type": args.loss_type,
-        "new_num_tokens": len(tokenizer),
-        "reduce_type": args.reduce_type,
-        "inference_mode": args.inference_mode,
-        "num_bubble_runs": args.num_bubble_runs,
-    }
+    config = RankerConfig
+    for k in args.__dict__:
+        if k in config.__dict__:
+            print(k, getattr(args, k))
+            setattr(config, k, getattr(args, k))
     if args.load_checkpoint:
         # config = torch.load(os.path.join(args.load_checkpoint, "config.bin"))
-        model = build_reranker(
+        model = build_ranker(
             args.ranker_type,
             args.model_type,
             args.model_name,
@@ -110,7 +106,7 @@ def main(args):
         else:
             logging.info(f"Successfully loaded checkpoint from '{args.load_checkpoint}'")
     else:
-        model = build_reranker(
+        model = build_ranker(
             args.ranker_type,
             args.model_type,
             args.model_name,
@@ -164,8 +160,8 @@ def main(args):
 
     logging.info(f"training args: {training_args}")
     logging.info(f"model config: {config}")
-    if args.ranker_type == "crosscompare":
-        compute_metrics = compute_metrics_for_crosscompare
+    if args.ranker_type == "pairranker":
+        compute_metrics = compute_metrics_for_pairranker
     else:
         compute_metrics = compute_metrics_for_scr
 
@@ -220,10 +216,10 @@ def main(args):
             if args.output_dir is None:
                 raise ValueError("output_dir must be set to save predictions")
             output_path = os.path.join(args.output_dir, "predictions.pt")
-            if args.ranker_type == "crosscompare" and args.inference_mode == "full":
+            if args.ranker_type == "pairranker" and args.inference_mode == "full":
                 # predictions[0] is a [size, num_candidate, num_candidates] ndarray, which stores the comparison results of each candidate with all other candidates
                 output_path = os.path.join(args.output_dir, "predictions_full.pt")
-            elif args.ranker_type == "crosscompare" and args.inference_mode == "bubble":
+            elif args.ranker_type == "pairranker" and args.inference_mode == "bubble":
                 output_path = os.path.join(args.output_dir, "predictions_bubble.pt")
             else:
                 output_path = os.path.join(args.output_dir, "predictions.pt")
@@ -234,13 +230,11 @@ def main(args):
                 torch.save(labels, f)
             logging.info(f"predictions saved to {output_path}")
 
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # model config
     parser.add_argument("--ranker_type", type=str, choices=[
-        "summareranker", "dual", "crosscompare"
+        "summareranker", "dual", "pairranker"
     ], default="sc")
     parser.add_argument("--model_type", type=str, choices=[
         "roberta", "bert", "t5", 'deberta', 'xlm-roberta', 'flan-t5', 'alpaca', 'opt'
@@ -251,9 +245,6 @@ if __name__ == "__main__":
     parser.add_argument("--loss_type", type=str, choices=[
       "BCE", "MSE", "instructgpt", "MoE_BCE", "simcls"
     ], default="BCE")
-    parser.add_argument("--reduce_type", type=str, choices=[
-        "moe", "cosine", "linear", "single_linear", "single_moe"
-    ], default="linear")
 
     # data config
     parser.add_argument("--n_candidates", type=int, default=-1)
@@ -339,7 +330,6 @@ if __name__ == "__main__":
     # inference config
     parser.add_argument("--inference_mode", type=str, default="bubble",
         choices=["bubble", "full"])
-    parser.add_argument("--num_bubble_runs", type=int, default=1)
 
     # init args
     args = parser.parse_args()

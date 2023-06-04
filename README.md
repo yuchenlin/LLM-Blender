@@ -1,39 +1,37 @@
 # LLM-ranker
-<!-- 
-<p align="center" width="50%">
-<img src="./assets/intro.png" alt="LLM-Blender" style="width: 50%; min-width: 300px; display: block; margin: auto;">
-</p> -->
-
-An Innovative ensembling framework to attain consistently superior performance by leveraging the diverse strengths and weaknesses of multiple open-source large language models (LLMs). 
-
-## Resources
-
-1. [Project website](http://yuchenlin.xyz/LLM-Blender/)
-2. [Checkpoints](https://huggingface.co/llm-blender) & [Dataset](https://huggingface.co/datasets/llm-blender/mix-instruct) on HuggingFace🤗
-3. [Paper Link](https://arxiv.org/abs/2212.10555)
-
 ## Overview
 
-We introduce LLM-Blender, an innovative ensembling framework to attain consistently superior performance by leveraging the diverse strengths and weaknesses of multiple open-source large language models (LLMs). LLM-Blender cut the weaknesses through ranking and integrate the strengths through fusing generation to enhance the capability of LLMs.
-
-<!-- <p align="center" width="100%">
-<img src="./assets/intro.png" alt="LLM-Blender" style="width: 50%; min-width: 300px; display: block; margin: auto;">
-</p> -->
+- We introduce LLM-Blender, an innovative ensembling framework to attain consistently superior performance by leveraging the diverse strengths and weaknesses of multiple open-source large language models (LLMs). LLM-Blender cut the weaknesses through ranking and integrate the strengths through fusing generation to enhance the capability of LLMs.
 
 ![LLM-BLender](./assets/llm_blender.png)
-1. improve the quality of LLM generated candidates
-2. serve as a reward model used for RLHF
+- Our framework consists of two complementary modules: **PairRanker** and **GenFuser**, addressing the observation that optimal LLMs for different examples can significantly vary. **PairRanker** employs a specialized pairwise comparison method to distinguish subtle differences between candidate outputs. **GenFuser** aims to merge the top-ranked candidates from the aggregation of PairRanker's pairwise comparisons into an improved output by capitalizing on their strengths and mitigating their weaknesses.
+- To facilitate large-scale evaluation, we introduce a benchmark dataset, [**MixInstruct**](#data_release), which is a mixture of multiple instruction datasets featuring oracle pairwise comparisons for testing purposes. Our **LLM-Blender** significantly surpasses the best LLMs and baseline ensembling methods across various metrics on **MixInstruct**, establishing a substantial performance gap.
 
-## Installation
+## Data Release
 
-First follow install pytorch that fits your local GPU cuda version.
+- To facilitate large-scale evaluation, we introduce a benchmark dataset, **MixInstruct**, which is a mixture of multiple instruction datasets featuring oracle pairwise comparisons for testing purposes. 
+- MixInstruct is the first large-scale dataset consisting of responses from 11 popular open-source LLMs on the instruction-following dataset. Each split of train/val/test contains 100k/5k/5k examples. 
+- MixInstruct instruct is collected from 4 famous instruction dataset: Alpaca-GPT4, Dolly-15k, GPT4All-LAION and ShareGPT. The ground-truth outputs comes from either ChatGPT, GPT-4 or human annotations.
+- MixInstruct is evaluated by both auto-metrics including BLEURT, BARTScore, BERTScore, etc. and ChatGPT. We provide 4771 examples on test split that is evaluated by ChatGPT through pariwise comparison.
+- Code to construct the dataset: [`get_mixinstruct.py`](./src/download_dataset/get_mixinstruct.py)
+- HuggingFace 🤗 [Dataset link](https://huggingface.co/datasets/llm-blender/mix-instruct)
+
+<div align="center"> <img src=./assets/Intro.png width=70%/> </div>
+
+## Usage
+
+### Installtion
+
 ```bash
+git clone https://github.com/yuchenlin/LLM-Blender.git
+cd LLM-Blender
 pip install -r requirements.txt
 ```
 
-## Training
+### Training
 
-The training scipt is integrated into a single bash. `./scripts/train_ranker`
+See more details in [`train_ranker.sh`](./scripts/train_ranker.sh)
+
 Please follow the guide in the script to train the ranker.
 
 Here are some explanations for the script parameters:
@@ -89,6 +87,8 @@ checkpoint_trained_dataset=<B>
 do_inference=True
 ```
 
-## Note
+### Model checkpoints
 
-When using flan-t5 as the backbone, set `fp16=False` in case of overflow.
+- [PairRanker checkpoint](https://huggingface.co/llm-blender/pair_ranker) fine-tuned on DeBERTa-v3-Large (304m)
+
+- [GenFuser checkpoint](https://huggingface.co/llm-blender/gen_fuser_3b) fine-tuned on Flan-T5-XL (3b)

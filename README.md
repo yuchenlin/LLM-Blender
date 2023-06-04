@@ -1,7 +1,7 @@
 # LLM-ranker
 
 <div style="width:40% float:center diaplay:inline">
-     <img src=./docs/logo-ai2.svg width=45%/><img src=./docs/logo-usc.png width=45%/>
+     <img src=./docs/logo-ai2.svg width=45%/><img src=./docs/logo-usc.png width=35%/>
 </div>
 
 <a target="_blank" href="https://github.com/yuchenlin/LLM-Blender">

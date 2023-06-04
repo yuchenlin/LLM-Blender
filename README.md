@@ -1,9 +1,23 @@
 # LLM-ranker
+
+<div style="width:40% float:center diaplay:inline">
+     <img src=./docs/logo-ai2.svg width=45%/><img src=./docs/logo-usc.png width=45%/>
+</div>
+
+<a target="_blank" href="https://github.com/yuchenlin/LLM-Blender">
+                                        <img style="height:22pt" src="https://img.shields.io/badge/-Code-green?style=flat&logo=github">
+                                      </a><a target="_blank" href="https://huggingface.co/datasets/llm-blender/mix-instruct">
+                                        <img style="height:22pt" src="https://img.shields.io/badge/-🤗%20Dataset-red?style=flat"></a><a target="_blank" href="https://huggingface.co/llm-blender">
+                                        <img style="height:22pt" src="https://img.shields.io/badge/-🤗%20Models-red?style=flat">
+                                      </a><a target="_blank" href="https://twitter.com/billyuchenlin/status/1663603372220616704?s=20">
+                                        <img style="height:22pt" src="https://img.shields.io/badge/-Tweet-blue?style=flat&logo=twitter">
+                                      </a>
+
 ## Overview
 
 - We introduce LLM-Blender, an innovative ensembling framework to attain consistently superior performance by leveraging the diverse strengths and weaknesses of multiple open-source large language models (LLMs). LLM-Blender cut the weaknesses through ranking and integrate the strengths through fusing generation to enhance the capability of LLMs.
 
-![LLM-BLender](./assets/llm_blender.png)
+![LLM-BLender](./docs/llm_blender.png)
 - Our framework consists of two complementary modules: **PairRanker** and **GenFuser**, addressing the observation that optimal LLMs for different examples can significantly vary. **PairRanker** employs a specialized pairwise comparison method to distinguish subtle differences between candidate outputs. **GenFuser** aims to merge the top-ranked candidates from the aggregation of PairRanker's pairwise comparisons into an improved output by capitalizing on their strengths and mitigating their weaknesses.
 - To facilitate large-scale evaluation, we introduce a benchmark dataset, [**MixInstruct**](#data_release), which is a mixture of multiple instruction datasets featuring oracle pairwise comparisons for testing purposes. Our **LLM-Blender** significantly surpasses the best LLMs and baseline ensembling methods across various metrics on **MixInstruct**, establishing a substantial performance gap.
 
@@ -16,7 +30,7 @@
 - Code to construct the dataset: [`get_mixinstruct.py`](./src/download_dataset/get_mixinstruct.py)
 - HuggingFace 🤗 [Dataset link](https://huggingface.co/datasets/llm-blender/mix-instruct)
 
-<div align="center"> <img src=./assets/Intro.png width=70%/> </div>
+<div align="center"> <img src=./docs/intro.png width=70%/> </div>
 
 ## Usage
 

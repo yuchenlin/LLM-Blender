@@ -1,0 +1,267 @@
+# Max length being 1024
+# Downloading GPT4all data
+File existing! Loading GPT4all from file
+173734 examples in GPT4all
+# Downloading Dolly 15k
+File existing! Loading Dolly 15k from file
+15015 examples in Dolly 15k
+# Downloading ITwGPT4
+File existing! Loading ITwGPT4 from file
+52002 examples in ITwGPT4
+# Downloading ShareGPT
+File existing! Loading ShareGPT from file
+92429 examples in ShareGPT
+# Mixing and filtering...
+Total 333180 examples after mixing
+# Removing duplicated examples...
+Deduplicating: 100%|███████████████████████████████████████████████████████████████| 333180/333180 [00:01<00:00, 328404.70it/s]
+Total 333172 examples after deduplication
+# Removing examples with too short and too long output...
+Tokenizing outputs:   0%|▏                                                              | 759/333172 [00:00<01:24, 3917.62it/s]Token indices sequence length is longer than the specified maximum sequence length for this model (777 > 512). Running this sequence through the model will result in indexing errors
+Tokenizing outputs: 100%|████████████████████████████████████████████████████████████| 333172/333172 [02:05<00:00, 2651.99it/s]
+Total 324197 examples after removing short output
+# Removing examples with too short too long input...
+Tokenizing inputs: 100%|█████████████████████████████████████████████████████████████| 324197/324197 [01:52<00:00, 2874.84it/s]
+Total 316366 examples after removing short input
+# Shuffling and splitting...
+Train: 306366, Dev: 5000, Test: 5000
+Done!
+# Datapoint source statistics:
+unified_chip2: 165507
+sharegpt: 81592
+laion: 7553
+itwgpt4: 48258
+dolly_15k: 13456
+# Text length statistics:
+Tokenizing instructions: 100%|███████████████████████████████████████████████████████| 316366/316366 [00:37<00:00, 8341.66it/s]
+Tokenizing inputs: 100%|████████████████████████████████████████████████████████████| 316366/316366 [00:29<00:00, 10717.65it/s]
+Tokenizing outputs:  10%|██████                                                       | 31216/316366 [00:11<01:45, 2710.88it/sTokenizing outputs:  10%|██████                                                       | 31488/316366 [00:11<01:45, 2707.54it/sTokenizing outputs:  10%|██████▏                                                      | 31769/316366 [00:11<01:43, 2736.61it/sTokenizing outputs:  10%|██████▏                                                      | 32049/316366 [00:12<01:43, 2753.43it/sTokenizing outputs:  10%|██████▏                                                      | 32325/316366 [00:12<01:46, 2664.39it/sTokenizing outputs:  10%|██████▎                                                      | 32593/316366 [00:12<01:46, 2659.55it/sTokenizing outputs:  10%|██████▎                                                      | 32868/316366 [00:12<01:45, 2682.15it/sTokenizing outputs:  10%|██████▍                                                      | 33137/316366 [00:12<01:45, 2682.55it/sTokenizing outputs:  11%|██████▍                                                      | 33418/316366 [00:12<01:44, 2718.00it/sTokenizing outputs: 100%|████████████████████████████████████████████████████████████| 316366/316366 [01:59<00:00, 2640.20it/s]
+Avg. Instruction length: 51.49
+Avg. Input length: 36.85
+Avg. Output length: 182.07
+Max. Instruction length: 1021
+Max. Input length: 1023
+Max. Output length: 1023
+Min. Instruction length: 1
+Min. Input length: 1
+Min. Output length: 11
+Done!
+
+# Max length being 512
+File existing! Loading GPT4all from file
+173734 examples in GPT4all
+# Downloading Dolly 15k
+File existing! Loading Dolly 15k from file
+15015 examples in Dolly 15k
+# Downloading ITwGPT4
+File existing! Loading ITwGPT4 from file
+52002 examples in ITwGPT4
+# Downloading ShareGPT
+File existing! Loading ShareGPT from file
+92429 examples in ShareGPT
+# Mixing and filtering...
+Total 333180 examples after mixing
+# Removing duplicated examples...
+Deduplicating: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 333180/333180 [00:00<00:00, 387880.18it/s]
+Total 333172 examples after deduplication
+# Removing examples with too short and too long output...
+Tokenizing outputs:   0%|▍                                                                                                                                                                                              | 750/333172 [00:00<01:26, 3864.24it/s]Token indices sequence length is longer than the specified maximum sequence length for this model (777 > 512). Running this sequence through the model will result in indexing errors
+Tokenizing outputs: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 333172/333172 [02:06<00:00, 2633.66it/s]
+Total 299220 examples after removing short output
+# Removing examples with too short too long instruction+input...
+Tokenizing inputs: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 299220/299220 [01:29<00:00, 3343.12it/s]
+Total 283573 examples after removing short input
+# Shuffling and splitting...
+Train: 273573, Dev: 5000, Test: 5000
+Done!
+# Datapoint source statistics:
+unified_chip2: 165495
+sharegpt: 52958
+itwgpt4: 47051
+dolly_15k: 12775
+laion: 5294
+# Text length statistics:
+Tokenizing instructions: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 283573/283573 [00:16<00:00, 17306.03it/s]
+Tokenizing inputs: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 283573/283573 [00:21<00:00, 13080.86it/s]
+Tokenizing outputs: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 283573/283573 [01:24<00:00, 3340.27it/s]
+Avg. Instruction length: 18.88
+Avg. Input length: 26.37
+Avg. Output length: 137.17
+Max. Instruction length: 509
+Max. Input length: 511
+Max. Output length: 511
+Min. Instruction length: 1
+Min. Input length: 1
+Min. Output length: 11
+Done!
+
+
+
+# max length being 128
+# Downloading GPT4all data
+File existing! Loading GPT4all from file
+173734 examples in GPT4all
+# Downloading Dolly 15k
+File existing! Loading Dolly 15k from file
+15015 examples in Dolly 15k
+# Downloading ITwGPT4
+File existing! Loading ITwGPT4 from file
+52002 examples in ITwGPT4
+# Downloading ShareGPT
+File existing! Loading ShareGPT from file
+92429 examples in ShareGPT
+# Mixing and filtering...
+Total 333180 examples after mixing
+# Removing duplicated examples...
+Deduplicating: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 333180/333180 [00:00<00:00, 413229.72it/s]
+Total 333172 examples after deduplication
+# Removing examples with too short and too long output...
+Tokenizing outputs:   0%|▏                                                                                                                                                                                         | 413/333172 [00:00<01:20, 4125.19it/s]Token indices sequence length is longer than the specified maximum sequence length for this model (777 > 512). Running this sequence through the model will result in indexing errors
+Tokenizing outputs: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 333172/333172 [02:06<00:00, 2636.42it/s]
+Total 185642 examples after removing short output
+# Removing examples with too short too long instruction+input...
+Tokenizing inputs: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 185642/185642 [00:26<00:00, 6920.17it/s]
+Total 175982 examples after removing short input
+# Shuffling and splitting...
+Train: 165982, Dev: 5000, Test: 5000
+Done!
+# Datapoint source statistics:
+sharegpt: 9093
+unified_chip2: 135575
+dolly_15k: 7751
+itwgpt4: 23352
+laion: 211
+# Text length statistics:
+Tokenizing instructions: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 175982/175982 [00:04<00:00, 38736.78it/s]
+Tokenizing inputs: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 175982/175982 [00:10<00:00, 17045.38it/s]
+Tokenizing outputs: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 175982/175982 [00:27<00:00, 6296.11it/s]
+Avg. Instruction length: 3.77
+Avg. Input length: 17.84
+Avg. Output length: 68.87
+Max. Instruction length: 125
+Max. Input length: 127
+Max. Output length: 127
+Min. Instruction length: 1
+Min. Input length: 1
+Min. Output length: 11
+Done!
+
+# max length being 64
+# Downloading GPT4all data
+File existing! Loading GPT4all from file
+173734 examples in GPT4all
+# Downloading Dolly 15k
+File existing! Loading Dolly 15k from file
+15015 examples in Dolly 15k
+# Downloading ITwGPT4
+File existing! Loading ITwGPT4 from file
+52002 examples in ITwGPT4
+# Downloading ShareGPT
+File existing! Loading ShareGPT from file
+92429 examples in ShareGPT
+# Mixing and filtering...
+Total 333180 examples after mixing
+# Removing duplicated examples...
+Deduplicating: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 333180/333180 [00:00<00:00, 358514.28it/s]
+Total 333172 examples after deduplication
+# Removing examples with too short and too long output...
+Tokenizing outputs:   0%|▍                                                                                                                                                                                         | 713/333172 [00:00<01:29, 3731.08it/s]Token indices sequence length is longer than the specified maximum sequence length for this model (777 > 512). Running this sequence through the model will result in indexing errors
+Tokenizing outputs: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 333172/333172 [02:06<00:00, 2639.82it/s]
+Total 81790 examples after removing short output
+# Removing examples with too short too long instruction+input...
+Tokenizing inputs: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 81790/81790 [00:14<00:00, 5545.72it/s]
+Total 73926 examples after removing short input
+# Shuffling and splitting...
+Train: 63926, Dev: 5000, Test: 5000
+Done!
+# Datapoint source statistics:
+itwgpt4: 15852
+unified_chip2: 49989
+sharegpt: 3542
+dolly_15k: 4538
+laion: 5
+# Text length statistics:
+Tokenizing instructions: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 73926/73926 [00:02<00:00, 33850.23it/s]
+Tokenizing inputs: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 73926/73926 [00:03<00:00, 19087.66it/s]
+Tokenizing outputs: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 73926/73926 [00:07<00:00, 9768.85it/s]
+Avg. Instruction length: 5.04
+Avg. Input length: 14.87
+Avg. Output length: 38.61
+Max. Instruction length: 63
+Max. Input length: 63
+Max. Output length: 63
+Min. Instruction length: 1
+Min. Input length: 1
+Min. Output length: 11
+Done!
+
+
+
+############################################################################################################################################
+# Downloading GPT4all data
+Found cached dataset parquet (/home/dongfu/.cache/huggingface/datasets/nomic-ai___parquet/nomic-ai--gpt4all_prompt_generations-94ada251779e8693/0.0.0/2a3b91fbd88a2c90d1dbbb32b460cf621d31bd5b05b934492fdef7d8d6f236ec)
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 20.28it/s]
+Processing GPT4all: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 437604/437604 [00:11<00:00, 37555.97it/s]
+173734 examples in GPT4all
+# Downloading Dolly 15k
+Found cached dataset parquet (/home/dongfu/.cache/huggingface/datasets/HuggingFaceH4___parquet/HuggingFaceH4--databricks_dolly_15k-6252f3495e7d2b9d/0.0.0/2a3b91fbd88a2c90d1dbbb32b460cf621d31bd5b05b934492fdef7d8d6f236ec)
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 1/1 [00:00<00:00, 72.03it/s]
+Processing Dolly 15k: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 15015/15015 [00:00<00:00, 34273.66it/s]
+15015 examples in Dolly 15k
+# Downloading ITwGPT4
+--2023-04-27 19:31:00--  https://github.com/Instruction-Tuning-with-GPT-4/GPT-4-LLM/raw/main/data/alpaca_gpt4_data.json
+Resolving github.com (github.com)... 192.30.255.113
+Connecting to github.com (github.com)|192.30.255.113|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://raw.githubusercontent.com/Instruction-Tuning-with-GPT-4/GPT-4-LLM/main/data/alpaca_gpt4_data.json [following]
+--2023-04-27 19:31:00--  https://raw.githubusercontent.com/Instruction-Tuning-with-GPT-4/GPT-4-LLM/main/data/alpaca_gpt4_data.json
+Resolving raw.githubusercontent.com (raw.githubusercontent.com)... 185.199.111.133, 185.199.109.133, 185.199.108.133, ...
+Connecting to raw.githubusercontent.com (raw.githubusercontent.com)|185.199.111.133|:443... connected.
+HTTP request sent, awaiting response... 200 OK
+Length: 43379276 (41M) [text/plain]
+Saving to: ‘../../data/itwgpt4.json’
+
+../../data/itwgpt4.json                                              100%[=====================================================================================================================================================================>]  41.37M   107MB/s    in 0.4s    
+
+2023-04-27 19:31:00 (107 MB/s) - ‘../../data/itwgpt4.json’ saved [43379276/43379276]
+
+ITwGPT4: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 52002/52002 [00:00<00:00, 586835.80it/s]
+52002 examples in ITwGPT4
+# Downloading ShareGPT
+Processing ShareGPT: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 94145/94145 [00:03<00:00, 25992.88it/s]
+16725 examples in ShareGPT
+# Mixing and filtering...
+Total 133725 examples after mixing
+# Removing duplicated examples...
+Deduplicating: 100%|███████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 133725/133725 [00:00<00:00, 326096.27it/s]
+Total 133717 examples after deduplication
+# Removing examples with too short and too long output...
+Tokenizing outputs:   0%|                                                                                                                                                                                                                               | 0/133717 [00:00<?, ?it/s]Token indices sequence length is longer than the specified maximum sequence length for this model (614 > 512). Running this sequence through the model will result in indexing errors
+Tokenizing outputs: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 133717/133717 [00:41<00:00, 3238.66it/s]
+Total 123596 examples after removing short output
+# Removing examples with too short too long instruction+input...
+Tokenizing inputs: 100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 123596/123596 [00:32<00:00, 3843.95it/s]
+Total 119661 examples after removing short input
+# Shuffling and splitting...
+Train: 100000, Dev: 2000, Test: 2000
+Done!
+# Datapoint source statistics:
+itwgpt4: 47049
+unified_chip2: 47599
+sharegpt: 10702
+dolly_15k: 12761
+laion: 1550
+# Text length statistics:
+Tokenizing instructions: 100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 119661/119661 [00:06<00:00, 19902.74it/s]
+Tokenizing inputs: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 119661/119661 [00:07<00:00, 15146.06it/s]
+Tokenizing outputs: 100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 119661/119661 [00:33<00:00, 3550.27it/s]
+Avg. Instruction length: 13.83
+Avg. Input length: 22.70
+Avg. Output length: 131.26
+Max. Instruction length: 506
+Max. Input length: 510
+Max. Output length: 511
+Min. Instruction length: 1
+Min. Input length: 1
+Min. Output length: 11
+Done!

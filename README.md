@@ -36,13 +36,64 @@
 
 ## Usage
 
-### Installtion
+### Installation
 
 ```bash
 git clone https://github.com/yuchenlin/LLM-Blender.git
 cd LLM-Blender
 pip install -r requirements.txt
 ```
+
+### Rank and Fusion
+
+- Please first download our DeBERTa-v3-large PairRanker checkpoint to your local folder: [checkpoint link](https://drive.google.com/drive/folders/1E3qsZqja5IBaYEDRtVARU88mDl_nBqQ3?usp=sharing)
+
+```python
+import llm_blender
+ranker_config = llm_blender.RankerConfig
+ranker_config.ranker_type = "pairranker"
+ranker_config.model_type = "deberta"
+ranker_config.model_name = "microsoft/deberta-v3-large"
+ranker_config.load_checkpoint = "<your checkpoint path>"
+ranker_config.cache_dir = "./hf_models"
+ranker_config.source_max_length = 128
+ranker_config.candidate_max_length = 128
+ranker_config.n_tasks = 1
+fuser_config = llm_blender.GenFuserConfig
+fuser_config.model_name = "llm-blender/gen_fuser_3b"
+fuser_config.cache_dir = "./hf_models"
+fuser_config.max_length = 512
+fuser_config.candidate_max_length = 128
+blender_config = llm_blender.BlenderConfig
+blender_config.device = "cuda"
+blender = llm_blender.Blender(blender_config, ranker_config, fuser_config)
+```
+
+- Then you can rank with the following function
+
+```python
+inputs = ["input1", "input2"]
+candidates_texts = [["candidate1 for input1", "candidatefor input1"], ["candidate1 for input2", "candidate2 for input2"]]
+ranks = blender.rank(inputs, candidates_texts, return_scores=False, batch_size=2)
+# ranks is a list of ranks where ranks[i][j] represents the ranks of candidate-j for input-i
+```
+
+- You can fuse the top-ranked candidates with the following code
+
+```python
+from llm_blender.blender.blender_utils import get_topk_candidates_from_ranks
+topk_candidates = get_topk_candidates_from_ranks(ranks, candidates_texts, top_k=3)
+fuse_generations = blender.fuse(inputs, topk_candidates, batch_size=2)
+# fuse_generations are the fused generations from our fine-tuned checkpoint
+```
+
+- You can also do the rank and fusion as a whole
+
+```python
+# fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return_scores=False, batch_size=2, top_k=3)
+```
+
+- Check more details on our example jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)
 
 ### Training
 

@@ -1,4 +1,4 @@
-# LLM-Blender: Ensembling LLMs with Pairwise Ranking & Generative Fusion
+# LLM-Blender: Ensembling LLMs with Pairwise Ranking & Generative Fusion [ACL2023]
 
 <div style="width:40% float:center diaplay:inline">
      <img src=./docs/logo-ai2.svg width=35%/> &nbsp; &nbsp; <img src=./docs/logo-usc.png width=25%/>

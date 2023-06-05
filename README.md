@@ -47,7 +47,7 @@ Then you are good to go through our LLM-Blender with `import llm_blender`.
 
 ### Rank and Fusion
 
-- Please first download our DeBERTa-v3-large PairRanker checkpoint to your local folder: [checkpoint link](https://drive.google.com/drive/folders/1E3qsZqja5IBaYEDRtVARU88mDl_nBqQ3?usp=sharing)
+- Please first download our DeBERTa-v3-large PairRanker checkpoint to your local folder: [checkpoint link](https://drive.google.com/file/d/1EpvFu_qYY0MaIu0BAAhK-sYKHVWtccWg/view?usp=sharing)
 
 ```python
 import llm_blender

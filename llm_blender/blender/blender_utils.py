@@ -33,6 +33,8 @@ def load_ranker(ranker_config: RankerConfig):
     if ranker_config.load_checkpoint is not None:
         load_checkpoint = ranker_config.load_checkpoint
         load_checkpoint = Path(load_checkpoint)
+        if not load_checkpoint.exists():
+            raise ValueError(f"Checkpoint '{load_checkpoint}' does not exist")
         if load_checkpoint.name == "pytorch_model.bin":
             load_checkpoint = load_checkpoint.parent
         

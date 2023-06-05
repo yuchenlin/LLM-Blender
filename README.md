@@ -41,8 +41,9 @@
 ```bash
 git clone https://github.com/yuchenlin/LLM-Blender.git
 cd LLM-Blender
-pip install -r requirements.txt
+pip install -e .
 ```
+Then you are good to go through our LLM-Blender with `import llm_blender`.
 
 ### Rank and Fusion
 
@@ -90,9 +91,16 @@ fuse_generations = blender.fuse(inputs, topk_candidates, batch_size=2)
 - You can also do the rank and fusion as a whole
 
 ```python
-# fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return_scores=False, batch_size=2, top_k=3)
+fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return_scores=False, batch_size=2, top_k=3)
 ```
 
+- Using llm-blender to directly compare two candidates
+```python
+candidates_A = [cands[0] for cands in candidates]
+candidates_B = [cands[1] for cands in candidates]
+comparison_results = blender.compare(inputs, candidates_A, candidates_B)
+# comparison_results is a list of bool, where element[i] denotes whether candidates_A[i] is better than candidates_B[i] for inputs[i]
+```
 - Check more details on our example jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)
 
 ### Training

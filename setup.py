@@ -14,7 +14,6 @@ setup(
         'torch',
         'accelerate',
         'wget',
-        'promptsource',
         'pycocoevalcap',
         'spacy',
         'evaluate',

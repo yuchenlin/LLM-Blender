@@ -115,7 +115,7 @@ comparison_results = blender.compare(inputs, candidates_A, candidates_B)
 - MixInstruct is the first large-scale dataset consisting of responses from 11 popular open-source LLMs on the instruction-following dataset. Each split of train/val/test contains 100k/5k/5k examples. 
 - MixInstruct instruct is collected from 4 famous instruction dataset: Alpaca-GPT4, Dolly-15k, GPT4All-LAION and ShareGPT. The ground-truth outputs comes from either ChatGPT, GPT-4 or human annotations.
 - MixInstruct is evaluated by both auto-metrics including BLEURT, BARTScore, BERTScore, etc. and ChatGPT. We provide 4771 examples on test split that is evaluated by ChatGPT through pariwise comparison.
-- Code to construct the dataset: [`get_mixinstruct.py`](./src/download_dataset/get_mixinstruct.py)
+- Code to construct the dataset: [`get_mixinstruct.py`](./llm_blender/download_dataset/get_mixinstruct.py)
 - HuggingFace 🤗 [Dataset link](https://huggingface.co/datasets/llm-blender/mix-instruct)
 
 <div align="center"> <img src=./docs/intro.png width=70%/> </div>
@@ -123,7 +123,7 @@ comparison_results = blender.compare(inputs, candidates_A, candidates_B)
 
 ## Training
 
-See more details in [`train_ranker.sh`](./scripts/train_ranker.sh)
+See more details in [`train_ranker.sh`](./train_ranker.sh)
 
 Please follow the guide in the script to train the ranker.
 

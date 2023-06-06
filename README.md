@@ -4,7 +4,7 @@
      <img src=./docs/logo-ai2.svg width=35%/> &nbsp; &nbsp; <img src=./docs/logo-usc.png width=25%/>
 </div>
 
-<a target="_blank" href="https://yuchenlin.xyz/files/blender.pdf">
+<a target="_blank" href="https://arxiv.org/abs/2306.02561">
 <img style="height:22pt" src="https://img.shields.io/badge/-Paper-black?style=flat&logo=arxiv">
 </a><a target="_blank" href="https://github.com/yuchenlin/LLM-Blender">
 <img style="height:22pt" src="https://img.shields.io/badge/-Code-green?style=flat&logo=github">

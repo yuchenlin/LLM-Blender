@@ -34,6 +34,8 @@ setup(
         'rouge_score',
         'scipy',
         'matplotlib',
-        'pandas'
+        'pandas',
+        'scikit-learn',
+        'protobuf<=3.20.1'
     ],
 )

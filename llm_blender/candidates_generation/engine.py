@@ -8,10 +8,16 @@ from tqdm import tqdm
 import torch
 import numpy as np
 import torch.nn.functional as F
-
+from transformers import (
+    StoppingCriteria,
+    StoppingCriteriaList
+)
+from typing import List
+    
 def beam_search_step(input_ids, attention_mask, tokenizer, base_model, args, **kwargs):
     kwargs['return_dict_in_generate'] = True
     kwargs['output_scores'] = True
+    
     # 1 - beam search
     if args.decoding_method == "beam_search":
         outputs = base_model.generate(
@@ -106,13 +112,27 @@ def beam_search_step(input_ids, attention_mask, tokenizer, base_model, args, **k
                     break
                 logprobs[i].append(masked_logits[j, i, summary_ids[i][j+1]].item())
 
-    generated = tokenizer.batch_decode(summary_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)
-    if args.stop_str:
+    summary_ids_in_list = summary_ids.tolist()
+    if hasattr(args, "stop_token_ids") and args.stop_token_ids:
+        for i in range(len(summary_ids_in_list)):
+            for j in range(len(summary_ids_in_list[i])):
+                if summary_ids_in_list[i][j] in args.stop_token_ids:
+                    summary_ids_in_list[i] = summary_ids_in_list[i][:j+1]
+                    logprobs[i] = logprobs[i][:j+1]
+                    break
+
+    generated = []
+    for i in range(len(summary_ids_in_list)):
+        generated.append(tokenizer.decode(summary_ids_in_list[i], skip_special_tokens=True, clean_up_tokenization_spaces=True))
+
+    if hasattr(args, "stop_str") and args.stop_str:
         for i in range(len(generated)):
             pos = generated[i].find(args.stop_str)
             if pos != -1:
                 generated[i] = generated[i][:pos]
                 logprobs[i] = logprobs[i][:pos]
+    
+    # aggregate logprobs
     logprobs = [sum(_probs) for _probs in logprobs]
     del summary_ids
     gc.collect()

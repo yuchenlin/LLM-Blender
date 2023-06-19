@@ -111,7 +111,6 @@ def eval_bleurt(
         hypotheses: the hypotheses
         references: the references
     """
-    torch.cuda.empty_cache()
     assert len(hypotheses) == len(references)
     bleurt_scorer = load('bleurt')
     bleurt_scores = []
@@ -125,13 +124,6 @@ def eval_bleurt(
     del bleurt_scorer
     return bleurt_scores
 
-# from bart_score import BARTScorer
-# >>> bart_scorer = BARTScorer(device='cuda:0', checkpoint='facebook/bart-large-cnn')
-# >>> bart_scorer.load(path='bart.pth')
-# >>> bart_scorer.score(['This is interesting.'], ['This is fun.'], batch_size=4)
-# [out]
-# [-2.336203098297119]
-
 def eval_bartscore(
     hypotheses: List[List[str]],
     references: List[List[str]]
@@ -143,7 +135,6 @@ def eval_bartscore(
         hypotheses: the hypotheses
         references: the references
     """
-    torch.cuda.empty_cache()
     assert len(hypotheses) == len(references)
     from bart_score import BARTScorer
     bart_scorer = BARTScorer(device='cuda:0', checkpoint='facebook/bart-large-cnn')
@@ -161,7 +152,6 @@ def eval_bartscore(
             )
             pbar.update(1)
             assert len(bart_scores[i]) == len(hypo_group)
-    del bart_scorer
     return bart_scores
 
 def eval_bleu4(
@@ -271,7 +261,6 @@ def eval_bertscore(
         hypotheses: the hypotheses
         references: the references
     """
-    torch.cuda.empty_cache()
     print("Evaluating bertscore")
     assert len(hypotheses) == len(references)
     hypotheses = np.array(hypotheses)
@@ -282,8 +271,6 @@ def eval_bertscore(
         hypo_group = hypotheses[:, group_id]
         P, R, F1 = bert_score.score(hypo_group.tolist(), references.tolist(), lang=lang, verbose=True, model_type=model_type, batch_size=16)
         scores[:, group_id] = F1.numpy()
-    gc.collect()
-    torch.cuda.empty_cache()
     return scores.tolist()
 
 def eval_spice(
@@ -326,8 +313,6 @@ def eval_spice(
     score, scores = spice_scorer.compute_score(gts, res)
     spice_scores = [[scores[hypo_id]['All']['f']*100.0 for hypo_id in hypo_ids] for hypo_ids in hypo_ids_per_ref]
     return spice_scores
-
-
 
 def compute_new_n_gram(source:str, candidate:str):
     """

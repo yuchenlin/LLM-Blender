@@ -185,6 +185,6 @@ do_inference=True
 
 ### Model checkpoints
 
-- [PairRanker checkpoint](https://huggingface.co/llm-blender/pair_ranker) fine-tuned on DeBERTa-v3-Large (304m)
+- [PairRanker checkpoint](https://drive.google.com/file/d/1EpvFu_qYY0MaIu0BAAhK-sYKHVWtccWg/view?usp=sharing) fine-tuned on DeBERTa-v3-Large (304m)
 
 - [GenFuser checkpoint](https://huggingface.co/llm-blender/gen_fuser_3b) fine-tuned on Flan-T5-XL (3b)

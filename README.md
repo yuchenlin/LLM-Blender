@@ -183,6 +183,10 @@ do_inference=True
 
 
 
+## Resources
+
+## Toolkits
+- [LLM-Gen](https://github.com/jdf-prog/LLM-Gen): A simple generation script used to get large-scale responses from various large language models
 ### Model checkpoints
 
 - [PairRanker checkpoint](https://drive.google.com/file/d/1EpvFu_qYY0MaIu0BAAhK-sYKHVWtccWg/view?usp=sharing) fine-tuned on DeBERTa-v3-Large (304m)

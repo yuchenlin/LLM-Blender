@@ -205,3 +205,8 @@ do_inference=True
 }
 
 ```
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=yuchenlin/LLM-Blender&type=Date)](https://star-history.com/#yuchenlin/LLM-Blender&Date)
+

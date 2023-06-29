@@ -194,6 +194,9 @@ do_inference=True
 
 - [GenFuser checkpoint](https://huggingface.co/llm-blender/gen_fuser_3b) fine-tuned on Flan-T5-XL (3b)
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=yuchenlin/LLM-Blender&type=Date)](https://star-history.com/#yuchenlin/LLM-Blender&Date)
 
 ## Citation 
 ```bibtex
@@ -206,7 +209,4 @@ do_inference=True
 
 ```
 
-## Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=yuchenlin/LLM-Blender&type=Date)](https://star-history.com/#yuchenlin/LLM-Blender&Date)
 

@@ -42,7 +42,6 @@ class Blender:
             logging.warning("No fuser config provided, no fuser loaded, please load fuser first through load_fuser()")
         else:
             self.fuser, self.fuser_tokenizer = load_fuser(fuser_config)
-            self.fuser = self.fuser.to(self.blender_config.device)
             self.fuser.eval()
 
     def rank(

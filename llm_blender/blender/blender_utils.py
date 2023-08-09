@@ -77,6 +77,7 @@ def load_fuser(fuser_config: GenFuserConfig):
     fuser = AutoModelForSeq2SeqLM.from_pretrained(
         model_name, cache_dir=fuser_config.cache_dir,
         device_map="auto", torch_dtype=get_torch_dtype(fuser_config.torch_dtype),
+        load_in_4bit=fuser_config.load_in_4bit, load_in_8bit=fuser_config.load_in_8bit,
     )
     return fuser, tokenizer
 

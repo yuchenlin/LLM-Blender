@@ -15,5 +15,9 @@ class GenFuserConfig:
     )
     torch_dtype:str = field(default="bfloat16",
         metadata={"help": "torch dtype"})
+    load_in_4bit:bool = field(default=False, 
+        metadata={"help": "Load in 4bit"})
+    load_in_8bit:bool = field(default=False,
+        metadata={"help": "Load in 8bit"})
 
                   

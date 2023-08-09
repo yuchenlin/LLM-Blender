@@ -193,3 +193,20 @@ do_inference=True
 - [PairRanker checkpoint](https://drive.google.com/file/d/1EpvFu_qYY0MaIu0BAAhK-sYKHVWtccWg/view?usp=sharing) fine-tuned on DeBERTa-v3-Large (304m)
 
 - [GenFuser checkpoint](https://huggingface.co/llm-blender/gen_fuser_3b) fine-tuned on Flan-T5-XL (3b)
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=yuchenlin/LLM-Blender&type=Date)](https://star-history.com/#yuchenlin/LLM-Blender&Date)
+
+## Citation 
+```bibtex
+@inproceedings{llm-blender-2023,
+    title = "LLM-Blender: Ensembling Large Language Models with Pairwise Comparison and Generative Fusion",
+    author = "Jiang, Dongfu and Ren, Xiang and Lin, Bill Yuchen",
+    booktitle = "Proceedings of the 61th Annual Meeting of the Association for Computational Linguistics (ACL 2023)",
+    year = "2023"
+}
+
+```
+
+

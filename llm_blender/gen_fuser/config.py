@@ -10,9 +10,10 @@ class GenFuserConfig:
     max_length:int = field(default=1024,
         metadata={"help": "Max length of the total sequence (source + top-k candidate)"}
     )
-    candidate_max_length:int = field(default=128,
+    candidate_maxlength:int = field(default=128,
         metadata={"help": "Max length of the candidate sequence"}
     )
-
+    torch_dtype:str = field(default="bfloat16",
+        metadata={"help": "torch dtype"})
 
                   

@@ -104,12 +104,13 @@ class GenerationDataset(torch.utils.data.Dataset):
             "encodings": encoded_prompt
         }
 
-def get_stop_str_and_ids(name_or_path, tokenizer):
+def get_stop_str_and_ids(tokenizer):
     """
         Get the stop string for the model
     """
     stop_str = None
     stop_token_ids = None
+    name_or_path = tokenizer.name_or_path.lower()
     if any([non_conv_model in name_or_path for non_conv_model in non_conv_models]):
         # flan-t5, All None
         pass
@@ -118,7 +119,7 @@ def get_stop_str_and_ids(name_or_path, tokenizer):
         stop_token_ids = tokenizer.convert_tokens_to_ids(tokenizer.all_special_tokens)
     elif "guanaco" in name_or_path:
         stop_str = "### Human"
-    elif "wizard" in name_or_path:
+    elif "wizardlm" in name_or_path:
         stop_str = "USER:"
     elif "airoboros" in name_or_path:
         stop_str = "USER:"
@@ -145,6 +146,13 @@ def get_stop_str_and_ids(name_or_path, tokenizer):
             stop_token_ids = [stop_token_ids, tokenizer.convert_tokens_to_ids(stop_str)]
         else:
             raise ValueError("Invalid stop_token_ids {}".format(stop_token_ids))
+    
+    if stop_token_ids:
+        if tokenizer.eos_token_id not in stop_token_ids:
+            stop_token_ids.append(tokenizer.eos_token_id)
+    else:
+        stop_token_ids = [tokenizer.eos_token_id]
+    stop_token_ids = list(set(stop_token_ids))
     print("Stop string: {}".format(stop_str))
     print("Stop token ids: {}".format(stop_token_ids))
     print("Stop token ids (str): {}".format(tokenizer.convert_ids_to_tokens(stop_token_ids) if stop_token_ids else None))
@@ -265,7 +273,7 @@ def main(args):
     tokenizer = build_tokenizer(args.model, cache_dir=args.cache_dir, trust_remote_code=True)
     tokenizer.model_name = args.model
     logging.info("Loading model {}".format(args.model))
-    args.stop_str, args.stop_token_ids = get_stop_str_and_ids(args.model, tokenizer)
+    args.stop_str, args.stop_token_ids = get_stop_str_and_ids(tokenizer)
 
     # model
     model = build_model(

@@ -10,14 +10,37 @@ import numpy as np
 import torch.nn.functional as F
 from transformers import (
     StoppingCriteria,
-    StoppingCriteriaList
+    StoppingCriteriaList,
+
 )
 from typing import List
+
+class StopTokenIdsCriteria(StoppingCriteria):
+    """
+    This class can be used to stop generation whenever the generated number of tokens exceeds `max_new_tokens`. Keep in
+    mind for decoder-only type of transformers, this will **not** include the initial prompted tokens. This is very
+    close to `MaxLengthCriteria` but ignores the number of initial tokens.
+
+    Args:
+        stop_token_ids (`List[int]`):
+    """
+
+    def __init__(self, stop_token_ids: List[int]):
+        self.stop_token_ids = stop_token_ids
+
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
+        if self.stop_token_ids:
+            return all(_input_ids[-1] in self.stop_token_ids for _input_ids in input_ids)
+        return False
     
 def beam_search_step(input_ids, attention_mask, tokenizer, base_model, args, **kwargs):
     kwargs['return_dict_in_generate'] = True
     kwargs['output_scores'] = True
-    
+    if hasattr(args, "stop_token_ids") and args.stop_token_ids:
+        kwargs['stopping_criteria'] = StoppingCriteriaList([
+            StopTokenIdsCriteria(args.stop_token_ids),
+        ])
+            
     # 1 - beam search
     if args.decoding_method == "beam_search":
         outputs = base_model.generate(

@@ -19,10 +19,10 @@ class RankerConfig:
     load_checkpoint:str = field(default=None,
         metadata={"help": "Load checkpoint path"}
     )
-    source_max_length:int = field(default=128,
+    source_maxlength:int = field(default=128,
         metadata={"help": "Max length of the source sequence"}
     )
-    candidate_max_length:int = field(default=128,
+    candidate_maxlength:int = field(default=128,
         metadata={"help": "Max length of the candidate sequence"}
     )
     n_tasks:int = field(default=1,

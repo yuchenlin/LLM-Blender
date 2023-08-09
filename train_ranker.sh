@@ -1,14 +1,14 @@
 #!/bin/bash
 #SBATCH --time=24:00:00
 #SBATCH --job-name=train_ranker
-#SBATCH --output ../jobs/%j.out
-#SBATCH --gres=gpu:6000:1
+#SBATCH --output ./jobs/train_ranker/%j.out
+#SBATCH --gres=gpu:a6000:1
 #SBATCH --qos=general
 
 nvidia-smi
 
 # <== MODIFY THE FOLLOWING PARAMETERS ==>
-dataset="mixinstruct"
+dataset="open_instruct"
 backbone_type="deberta" # "deberta" or "roberta"
 backbone_name="microsoft/deberta-v3-large" # "microsoft/deberta-v3-large" or "roberta-large"
 n_gpu=1
@@ -24,12 +24,12 @@ fp16=True # whether to use fp16
 max_train_data_size=-1 # -1 means no limit
 max_eval_data_size=-1 # -1 means no limit
 max_predict_data_size=50 # -1 means no limit
-do_inference=True # whether do inference instead of training, i.e. do test
+do_inference=False # whether do inference instead of training, i.e. do test
 # for inference, sometimes you want to use a checkpoint trained on another dataset
 # to do inference on a dataset, you can set the checkpoint_trained_dataset to the dataset
 # by default, it is set to the dataset you are doing inference on
-checkpoint_trained_dataset="mix_128"
-run_name_postfix="_bartscore" # add a postfix to the run_name
+checkpoint_trained_dataset=""
+run_name_postfix="_new" # add a postfix to the run_name
 TORCHRUN_CMD="torchrun"
 
 # set the dataset specific parameters below
@@ -51,6 +51,14 @@ elif [[ $dataset =~ "self_instruct" ]]; then
     gradient_accumulation_steps=16
     using_metrics="bartscore"
 
+elif [[ $dataset =~ "open_instruct" ]]; then
+    echo "Using open_instruct user oriented datasets"
+    source_maxlength=192
+    candidate_maxlength=416
+    per_device_train_batch_size=4
+    per_device_eval_batch_size=2
+    gradient_accumulation_steps=16
+    using_metrics="comb_rate"
 else
     echo "Unknown dataset: ${dataset}"
     echo "Please set the dataset specific parameters in the script"
@@ -58,7 +66,7 @@ else
 fi
 
 # <== Less likely to modify the following parameters ==>
-localhost=$RANDOM
+localhost=$RANDOM # random port number
 train_data_path="./data/${dataset}/train_data_prepared.json"
 dev_data_path="./data/${dataset}/val_data_prepared.json"
 test_data_path="./data/${dataset}/test_data_prepared.json"

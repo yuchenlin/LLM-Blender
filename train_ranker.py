@@ -84,7 +84,7 @@ def main(args):
         args.n_tasks = predict_dataset.n_tasks
 
     # set up model
-    config = RankerConfig
+    config = RankerConfig()
     for k in args.__dict__:
         if k in config.__dict__:
             print(k, getattr(args, k))
@@ -243,7 +243,7 @@ if __name__ == "__main__":
     parser.add_argument("--load_checkpoint", type=empty2None, default=None)
     parser.add_argument("--cache_dir", type=str, default=None)
     parser.add_argument("--loss_type", type=str, choices=[
-      "BCE", "MSE", "instructgpt", "MoE_BCE", "simcls"
+      "BCE", "MSE", "instructgpt", "MoE_BCE", "simcls", "open_instruct_BCE"
     ], default="BCE")
 
     # data config

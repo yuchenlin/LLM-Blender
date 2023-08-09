@@ -2,7 +2,7 @@
 #SBATCH --time=12:00:00
 #SBATCH --job-name=generate_candidates
 #SBATCH --output ../../jobs/%j.out
-#SBATCH --gres=gpu:a6000:4
+#SBATCH --gres=gpu:a6000:1
 #SBATCH --qos=normal
 #SBATCH -n 1
 
@@ -22,7 +22,7 @@ num_candidates=1
 num_beams=$num_candidates
 num_beam_groups=$num_candidates
 overwrite=False
-inference_bs=1
+inference_bs=3
 temperature=0.7
 no_repeat_ngram_size=0
 repetition_penalty=1.0

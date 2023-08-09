@@ -16,11 +16,26 @@ from transformers import (
 )
 from typing import List
 
+def get_torch_dtype(dtype_str):
+    """
+        Get the torch dtype from a string
+    """
+    if dtype_str == "float32":
+        return torch.float32
+    elif dtype_str == "float16":
+        return torch.float16
+    elif dtype_str == "bfloat16":
+        return torch.bfloat16
+    elif dtype_str == "int8":
+        return torch.int8
+    else:
+        raise ValueError("Invalid dtype {}".format(dtype_str))
+    
 def load_ranker(ranker_config: RankerConfig):
     """Load PairRanker model from config file"""
     tokenizer = build_tokenizer(ranker_config.model_name, cache_dir=ranker_config.cache_dir)
     collator = build_collator(ranker_config.ranker_type, tokenizer,
-        ranker_config.source_max_length, ranker_config.candidate_max_length,
+        ranker_config.source_maxlength, ranker_config.candidate_maxlength,
     )
     ranker = build_ranker(
         ranker_config.ranker_type,
@@ -44,6 +59,8 @@ def load_ranker(ranker_config: RankerConfig):
             logging.warning(f"Missing keys: {load_result.missing_keys}")
         else:
             logging.info(f"Successfully loaded checkpoint from '{load_checkpoint}'")
+    if ranker_config.fp16:
+        ranker = ranker.half()
     return ranker, tokenizer, collator
 
 def get_topk_candidates_from_ranks(ranks:List[List[int]], candidates:List[List[str]], top_k:int):
@@ -57,7 +74,10 @@ def get_topk_candidates_from_ranks(ranks:List[List[int]], candidates:List[List[s
 def load_fuser(fuser_config: GenFuserConfig):
     model_name = fuser_config.model_name
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=fuser_config.cache_dir)
-    fuser = AutoModelForSeq2SeqLM.from_pretrained(model_name, cache_dir=fuser_config.cache_dir)
+    fuser = AutoModelForSeq2SeqLM.from_pretrained(
+        model_name, cache_dir=fuser_config.cache_dir,
+        device_map="auto", torch_dtype=get_torch_dtype(fuser_config.torch_dtype),
+    )
     return fuser, tokenizer
 
 class RankerDataset(torch.utils.data.Dataset):
@@ -85,7 +105,7 @@ class RankerDataset(torch.utils.data.Dataset):
         return batch
 
 class GenFuserDataset(torch.utils.data.Dataset):
-    def __init__(self, inputs:List[str], candidates:List[List[str]], tokenizer, max_length, candidate_max_length, instructions:List[str]=None, outputs:List[str]=None):
+    def __init__(self, inputs:List[str], candidates:List[List[str]], tokenizer, max_length, candidate_maxlength, instructions:List[str]=None, outputs:List[str]=None):
         """
             data: list of dict
             tokenizer: tokenizer
@@ -100,7 +120,7 @@ class GenFuserDataset(torch.utils.data.Dataset):
         assert len(self.inputs) == len(self.candidates), "Number of inputs and candidates must be the same"
         self.tokenizer = tokenizer
         self.max_length = max_length
-        self.candidate_max_length = candidate_max_length
+        self.candidate_maxlength = candidate_maxlength
 
     def __len__(self):
         return len(self.inputs)
@@ -110,11 +130,11 @@ class GenFuserDataset(torch.utils.data.Dataset):
         input_text = self.inputs[index]
         candidates = self.candidates[index]
         output = self.outputs[index] if self.outputs is not None else None
-        if self.candidate_max_length is not None:
+        if self.candidate_maxlength is not None:
             for i in range(len(candidates)):
                 ids = self.tokenizer.encode(candidates[i], add_special_tokens=False)
-                if len(ids) > self.candidate_max_length:
-                    ids = ids[:self.candidate_max_length]
+                if len(ids) > self.candidate_maxlength:
+                    ids = ids[:self.candidate_maxlength]
                     candidates[i] = self.tokenizer.decode(ids)
                     candidates[i] += "..."
 

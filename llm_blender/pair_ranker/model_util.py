@@ -94,18 +94,18 @@ def build_ranker(ranker_type, model_type, model_name, cache_dir, config, tokeniz
 def build_collator(
     model_type:str,
     tokenizer,
-    source_max_length:int,
-    candidate_max_length:int,
+    source_maxlength:int,
+    candidate_maxlength:int,
     source_prefix:str = None,
     candidate1_prefix:str = None,
     candidate2_prefix:str = None,
     ):
     if model_type == "summareranker":
-        return SCRCollator(source_max_length, tokenizer, candidate_max_length, source_prefix, candidate1_prefix)
+        return SCRCollator(source_maxlength, tokenizer, candidate_maxlength, source_prefix, candidate1_prefix)
     elif model_type == "dual":
-        return DualCollator(source_max_length, tokenizer, candidate_max_length, source_prefix, candidate1_prefix)
+        return DualCollator(source_maxlength, tokenizer, candidate_maxlength, source_prefix, candidate1_prefix)
     elif model_type == "pairranker":
-        return CrossCompareCollator(source_max_length, tokenizer, candidate_max_length, source_prefix, candidate1_prefix, candidate2_prefix)
+        return CrossCompareCollator(source_maxlength, tokenizer, candidate_maxlength, source_prefix, candidate1_prefix, candidate2_prefix)
     else:
         raise ValueError(f"model_type {model_type} not supported")
 

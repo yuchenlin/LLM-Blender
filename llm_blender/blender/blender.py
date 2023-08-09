@@ -7,7 +7,8 @@ from .blender_utils import (
     load_fuser,
     RankerDataset,
     GenFuserDataset,
-    get_topk_candidates_from_ranks
+    get_topk_candidates_from_ranks,
+    get_torch_dtype
 )
 from ..gpt_eval.utils import (
     get_scores_from_cmps,
@@ -132,21 +133,24 @@ class Blender:
             return None
         
         max_length = self.fuser_config.max_length
-        candidate_max_length = self.fuser_config.candidate_max_length
+        candidate_maxlength = self.fuser_config.candidate_maxlength
         dataset = GenFuserDataset(inputs, candidates, self.fuser_tokenizer,
             instructions=instructions, max_length=max_length, 
-            candidate_max_length=candidate_max_length)
+            candidate_maxlength=candidate_maxlength)
 
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
         if not generate_kwargs:
             generate_kwargs = {
-                "max_new_tokens": candidate_max_length,
+                "max_new_tokens": candidate_maxlength,
                 "num_beams": 4,
                 "num_return_sequences": 1,
             }
         generations = []
         for batch in tqdm(iter(dataloader), desc="Fusing candidates"):
             batch = {k: v.to(self.blender_config.device) for k, v in batch.items()}
+            keep_column_mask = batch['attention_mask'].ne(0).any(dim=0)
+            batch['input_ids'] = batch['input_ids'][:, keep_column_mask]
+            batch['attention_mask'] = batch['attention_mask'][:, keep_column_mask]
             output_ids = self.fuser.generate(**batch, **generate_kwargs)
             _generations = self.fuser_tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             generations.extend(_generations)

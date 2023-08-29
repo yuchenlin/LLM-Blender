@@ -53,14 +53,12 @@ def load_ranker(ranker_config: RankerConfig):
         if load_checkpoint.name == "pytorch_model.bin":
             load_checkpoint = load_checkpoint.parent
         
-        state_dict = torch.load(load_checkpoint/"pytorch_model.bin")
+        state_dict = torch.load(load_checkpoint/"pytorch_model.bin", map_location="cpu")
         load_result = ranker.load_state_dict(state_dict, strict=False)
         if load_result.missing_keys:
             logging.warning(f"Missing keys: {load_result.missing_keys}")
         else:
             logging.info(f"Successfully loaded checkpoint from '{load_checkpoint}'")
-    if ranker_config.fp16:
-        ranker = ranker.half()
     return ranker, tokenizer, collator
 
 def get_topk_candidates_from_ranks(ranks:List[List[int]], candidates:List[List[str]], top_k:int):
@@ -74,11 +72,17 @@ def get_topk_candidates_from_ranks(ranks:List[List[int]], candidates:List[List[s
 def load_fuser(fuser_config: GenFuserConfig):
     model_name = fuser_config.model_name
     tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=fuser_config.cache_dir)
-    fuser = AutoModelForSeq2SeqLM.from_pretrained(
-        model_name, cache_dir=fuser_config.cache_dir,
-        device_map="auto", torch_dtype=get_torch_dtype(fuser_config.torch_dtype),
-        load_in_4bit=fuser_config.load_in_4bit, load_in_8bit=fuser_config.load_in_8bit,
-    )
+    if fuser_config.device == "cpu":
+        fuser = AutoModelForSeq2SeqLM.from_pretrained(
+            model_name, cache_dir=fuser_config.cache_dir,
+            device_map={"": "cpu"}, torch_dtype=get_torch_dtype(fuser_config.torch_dtype),
+        )
+    else:
+        fuser = AutoModelForSeq2SeqLM.from_pretrained(
+            model_name, cache_dir=fuser_config.cache_dir,
+            device_map="auto", torch_dtype=get_torch_dtype(fuser_config.torch_dtype),
+            load_in_4bit=fuser_config.load_in_4bit, load_in_8bit=fuser_config.load_in_8bit,
+        )
     return fuser, tokenizer
 
 class RankerDataset(torch.utils.data.Dataset):

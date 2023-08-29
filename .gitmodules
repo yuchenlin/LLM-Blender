@@ -1,0 +1,3 @@
+[submodule "hf_space/LLM-Blender"]
+	path = hf_space/LLM-Blender
+	url = https://huggingface.co/spaces/llm-blender/LLM-Blender

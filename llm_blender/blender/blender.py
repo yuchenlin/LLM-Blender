@@ -35,12 +35,17 @@ class Blender:
             logging.warning("No ranker config provided, no ranker loaded, please load ranker first through load_ranker()")
         else:
             self.ranker, self.ranker_tokenizer, self.ranker_collator = load_ranker(ranker_config)
+            if self.blender_config.device == "cuda" and ranker_config.fp16:
+                self.ranker = self.ranker.half()
+            else:
+                self.ranker = self.ranker.float()
             self.ranker = self.ranker.to(self.blender_config.device)
             self.ranker.eval()
         
         if self.fuser_config is None:
             logging.warning("No fuser config provided, no fuser loaded, please load fuser first through load_fuser()")
         else:
+            fuser_config.device = self.blender_config.device
             self.fuser, self.fuser_tokenizer = load_fuser(fuser_config)
             self.fuser.eval()
 

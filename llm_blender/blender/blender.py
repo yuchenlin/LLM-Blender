@@ -1,6 +1,7 @@
 import logging
 import torch
 import numpy as np
+import copy
 from typing import List, Union
 from .blender_utils import (
     load_ranker, 
@@ -56,6 +57,7 @@ class Blender:
         instructions:List[str]=None, 
         return_scores:bool=False,
         batch_size:int=8,
+        **rank_kwargs
     ):
         """Rank candidates for each input
         Args:
@@ -73,8 +75,11 @@ class Blender:
             logging.warning("No ranker loaded, please load ranker first through load_ranker()")
             return None
         assert len(inputs) == len(candidates), "Number of inputs and candidates must be the same"
+        collate_fn = copy.copy(self.ranker_collator)
+        collate_fn.source_maxlength = rank_kwargs.get("source_max_length", None) or self.ranker_config.source_maxlength
+        collate_fn.candidate_maxlength = rank_kwargs.get("candidate_max_length", None) or self.ranker_config.candidate_maxlength
         dataset = RankerDataset(inputs, candidates, instructions=instructions)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=self.ranker_collator)
+        dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
         scores = []
         with torch.no_grad():
             for batch in tqdm(iter(dataloader), desc="Ranking candidates"):
@@ -135,27 +140,29 @@ class Blender:
         if self.fuser is None:
             logging.warning("No fuser loaded, please load fuser first through load_fuser()")
             return None
-        
-        max_length = self.fuser_config.max_length
-        candidate_maxlength = self.fuser_config.candidate_maxlength
+        generate_kwargs = generate_kwargs.copy()
+        max_length = generate_kwargs.pop("source_max_length", None) or self.fuser_config.max_length
+        candidate_maxlength = generate_kwargs.pop("candidate_max_length", None) or self.fuser_config.candidate_maxlength
         dataset = GenFuserDataset(inputs, candidates, self.fuser_tokenizer,
             instructions=instructions, max_length=max_length, 
             candidate_maxlength=candidate_maxlength)
 
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)
-        if not generate_kwargs:
-            generate_kwargs = {
-                "max_new_tokens": candidate_maxlength,
-                "num_beams": 4,
-                "num_return_sequences": 1,
-            }
+        generate_params = {
+            "max_new_tokens": candidate_maxlength,
+            "num_beams": 4,
+            "num_return_sequences": 1,
+        }
+        if generate_kwargs:
+            generate_params.update(generate_kwargs)
+            
         generations = []
         for batch in tqdm(iter(dataloader), desc="Fusing candidates"):
             batch = {k: v.to(self.blender_config.device) for k, v in batch.items()}
             keep_column_mask = batch['attention_mask'].ne(0).any(dim=0)
             batch['input_ids'] = batch['input_ids'][:, keep_column_mask]
             batch['attention_mask'] = batch['attention_mask'][:, keep_column_mask]
-            output_ids = self.fuser.generate(**batch, **generate_kwargs)
+            output_ids = self.fuser.generate(**batch, **generate_params)
             _generations = self.fuser_tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             generations.extend(_generations)
         return generations

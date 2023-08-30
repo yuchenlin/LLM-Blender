@@ -141,10 +141,9 @@ class Blender:
             logging.warning("No fuser loaded, please load fuser first through load_fuser()")
             return None
         generate_kwargs = generate_kwargs.copy()
-        max_length = generate_kwargs.pop("source_max_length", None) or self.fuser_config.max_length
         candidate_maxlength = generate_kwargs.pop("candidate_max_length", None) or self.fuser_config.candidate_maxlength
         dataset = GenFuserDataset(inputs, candidates, self.fuser_tokenizer,
-            instructions=instructions, max_length=max_length, 
+            instructions=instructions, max_length=self.fuser_config.max_length, 
             candidate_maxlength=candidate_maxlength)
 
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False)

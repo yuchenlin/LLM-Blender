@@ -16,7 +16,7 @@ from transformers import (
     AutoModelForSeq2SeqLM,
 )
 from typing import List
-
+from huggingface_hub import snapshot_download
 def get_torch_dtype(dtype_str):
     """
         Get the torch dtype from a string
@@ -47,42 +47,27 @@ def load_ranker(ranker_config: RankerConfig):
         tokenizer,
     )
     if ranker_config.load_checkpoint is not None:
-        load_checkpoint = ranker_config.load_checkpoint
+        load_checkpoint = Path(ranker_config.load_checkpoint)
         # check if it is a our checkpoint
-        cache_dir = Path(ranker_config.cache_dir) or Path(os.path.expanduser(f"~/.cache/llm-blender/"))
+        cache_dir = Path(ranker_config.cache_dir) or Path(os.path.expanduser(f"~/.cache"))
         if cache_dir.name != "llm-blender":
-            cache_dir = cache_dir / "llm-blender"
-        cache_dir = cache_dir / ranker_config.ranker_type / ranker_config.model_name
+            cache_dir = cache_dir
         cache_dir.mkdir(parents=True, exist_ok=True)
-        our_checkpoint_names = ["blender_ranker", "reward_model"]
-        # check if it is a our checkpoint
-        if ranker_config.ranker_type == "pairranker" and \
-            ranker_config.model_name == "microsoft/deberta-v3-large" and \
-            ranker_config.load_checkpoint in our_checkpoint_names:
-            if ranker_config.load_checkpoint == "blender_ranker":
-                gdrive_checkpoint_name = "pairranker-deberta-v3-large"
-                gdrive_id = "1EpvFu_qYY0MaIu0BAAhK-sYKHVWtccWg"
-            elif ranker_config.load_checkpoint == "reward_model":
-                gdrive_checkpoint_name = "pairranker_reward_model"
-                gdrive_id = "1Udnyc3ZfO6enMt7P-OtWJ56wuFuyt7gR" # To change
-            else:
-                raise ValueError(f"Invalid checkpoint name {ranker_config.load_checkpoint}")
-            load_checkpoint = cache_dir / ranker_config.load_checkpoint
-            if not load_checkpoint.exists():
-                logging.warning(f"Checkpoint '{load_checkpoint}' does not exist")
-                logging.warning(f"Dowloading checkpoint from 'https://drive.google.com/file/d/{gdrive_id}/view'...")
-                checkpoint_dir = cache_dir / gdrive_checkpoint_name
-                checkpoint_zip = cache_dir / f"{gdrive_checkpoint_name}.zip"
-                os.system(f"gdown https://drive.google.com/uc?id={gdrive_id} -O {checkpoint_zip}")
-                os.system(f"unzip {checkpoint_zip} -d {cache_dir}")
-                os.system(f"mv {checkpoint_dir} {load_checkpoint}")
-                os.unlink(checkpoint_zip)
-        # load checkpoint from local path
-        else:
-            load_checkpoint = Path(load_checkpoint)
-
+        our_checkpoint_names = ["llm-blender/pair-ranker", "llm-blender/pair-reward-model"]
+        
+        if ranker_config.load_checkpoint in our_checkpoint_names:
+            assert ranker_config.ranker_type == "pairranker", f"{ranker_config.load_checkpoint} is only available for pairranker"
+            assert ranker_config.model_name == "microsoft/deberta-v3-large", f"{ranker_config.load_checkpoint} is only available for microsoft/deberta-v3-large"
         if not load_checkpoint.exists():
-            raise ValueError(f"Checkpoint '{load_checkpoint}' does not exist")
+            # try load from huggingface hub
+            load_checkpoint = cache_dir / ranker_config.load_checkpoint
+            logging.warning(f"Checkpoint '{load_checkpoint}' does not exist")
+            logging.warning(f"Try dowloading checkpoint from huggingface hub: {ranker_config.load_checkpoint}")                
+            snapshot_download(ranker_config.load_checkpoint, local_dir=load_checkpoint)
+            logging.warning(f"Successfully downloaded checkpoint to '{load_checkpoint}'")
+        else:
+            # load checkpoint from local path
+            load_checkpoint = Path(load_checkpoint)
         if load_checkpoint.name == "pytorch_model.bin":
             load_checkpoint = load_checkpoint.parent
         

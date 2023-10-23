@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='llm_blender',
-    version='0.0.1',
+    version='0.0.2',
     description='LLM-Blender, an innovative ensembling framework to attain consistently superior performance by leveraging the diverse strengths and weaknesses of multiple open-source large language models (LLMs). LLM-Blender cut the weaknesses through ranking and integrate the strengths through fusing generation to enhance the capability of LLMs.',
     author='Dongfu Jiang',
     author_email='dongfu.jdf@gmail.com',

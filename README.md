@@ -47,6 +47,10 @@ git clone https://github.com/yuchenlin/LLM-Blender.git
 cd LLM-Blender
 pip install -e .
 ```
+or 
+```bash
+pip install git+https://github.com/yuchenlin/LLM-Blender.git
+```
 Then you are good to go through our LLM-Blender with `import llm_blender`.
 
 ### Rank and Fusion

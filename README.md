@@ -55,27 +55,12 @@ Then you are good to go through our LLM-Blender with `import llm_blender`.
 
 ### Rank and Fusion
 
-- Please first download our DeBERTa-v3-large PairRanker checkpoint to your local folder: [***checkpoint link***](https://drive.google.com/file/d/1EpvFu_qYY0MaIu0BAAhK-sYKHVWtccWg/view?usp=sharing)
 
 ```python
 import llm_blender
-ranker_config = llm_blender.RankerConfig
-ranker_config.ranker_type = "pairranker"
-ranker_config.model_type = "deberta"
-ranker_config.model_name = "microsoft/deberta-v3-large"
-ranker_config.load_checkpoint = "<your checkpoint path>"
-ranker_config.cache_dir = "./hf_models"
-ranker_config.source_maxlength = 128
-ranker_config.candidate_maxlength = 128
-ranker_config.n_tasks = 1
-fuser_config = llm_blender.GenFuserConfig
-fuser_config.model_name = "llm-blender/gen_fuser_3b"
-fuser_config.cache_dir = "./hf_models"
-fuser_config.max_length = 512
-fuser_config.candidate_maxlength = 128
-blender_config = llm_blender.BlenderConfig
-blender_config.device = "cuda"
-blender = llm_blender.Blender(blender_config, ranker_config, fuser_config)
+blender = llm_blender.Blender()
+blender.loadranker("llm-blender/pair-ranker") # load ranker checkpoint
+blender.loadfuser("llm-blender/gen_fuser_3b") # load fuser checkpoint if you want to use pre-trained fuser; or you can use ranker only
 ```
 
 - Then you can rank with the following function
@@ -194,9 +179,9 @@ do_inference=True
 
 **Model checkpoints**
 
-- [PairRanker checkpoint](https://drive.google.com/file/d/1EpvFu_qYY0MaIu0BAAhK-sYKHVWtccWg/view?usp=sharing) fine-tuned on DeBERTa-v3-Large (304m)
+- 🤗[PairRanker checkpoint](https://huggingface.co/llm-blender/pair-ranker) fine-tuned on DeBERTa-v3-Large (304m)
 
-- [GenFuser checkpoint](https://huggingface.co/llm-blender/gen_fuser_3b) fine-tuned on Flan-T5-XL (3b)
+- 🤗[GenFuser checkpoint](https://huggingface.co/llm-blender/gen_fuser_3b) fine-tuned on Flan-T5-XL (3b)
 
 ## Star History
 

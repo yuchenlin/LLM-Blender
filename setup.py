@@ -36,6 +36,9 @@ setup(
         'matplotlib',
         'pandas',
         'scikit-learn',
-        'protobuf<=3.20.1'
+        'protobuf<=3.20.1',
+        'wandb',
+        'sacrebleu',
+        'dataclasses-json'
     ],
 )

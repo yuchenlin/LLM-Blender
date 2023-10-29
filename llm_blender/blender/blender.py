@@ -2,7 +2,10 @@ import logging
 import torch
 import numpy as np
 import copy
+import json
+import os
 from typing import List, Union
+from pathlib import Path
 from .blender_utils import (
     load_ranker, 
     load_fuser,
@@ -18,20 +21,33 @@ from ..gpt_eval.utils import (
 from ..pair_ranker.config import RankerConfig
 from ..gen_fuser.config import GenFuserConfig
 from .config import BlenderConfig
+from huggingface_hub import snapshot_download
 from tqdm import tqdm
 
 
 class Blender:
     def __init__(
         self, 
-        blender_config:BlenderConfig,
+        blender_config:BlenderConfig=None,
         ranker_config:RankerConfig=None,
         fuser_config:GenFuserConfig=None,
     ):
+        """Initialize Blender
+
+        Args:
+            blender_config (BlenderConfig, optional): 
+                Defaults to None.
+            ranker_config (RankerConfig, optional): 
+                Defaults to None. 
+                Load ranker from ranker_config with ranker_config.load_checkpoint
+            fuser_config (GenFuserConfig, optional): 
+                Defaults to None. 
+                Load fuser from fuser_config with fuser_config.load_checkpoint
+        """
         self.ranker_config = ranker_config
         self.fuser_config = fuser_config
-        self.blender_config = blender_config
-
+        self.blender_config = blender_config or BlenderConfig()
+        
         if self.ranker_config is None:
             logging.warning("No ranker config provided, no ranker loaded, please load ranker first through load_ranker()")
         else:
@@ -49,7 +65,74 @@ class Blender:
             fuser_config.device = self.blender_config.device
             self.fuser, self.fuser_tokenizer = load_fuser(fuser_config)
             self.fuser.eval()
+        
+    def loadranker(self, ranker_path:str, device:str=None, **kwargs):
+        """Load ranker from a path
 
+        Args:
+            ranker_path (str):
+                - Huggingface model path, e.g. "llm-blender/pair-ranker"
+                - Local path, e.g. "/path/to/ranker"
+            device (str): 
+                cuda or cpu, or None. If None, will use self.blender_config.device
+            kwargs: 
+                kwargs for RankerConfig
+                
+        """
+        cache_dir = kwargs.pop("cache_dir", Path(os.path.expanduser(f"~/.cache")))
+        try:
+            # try hugging face hub
+            logging.warning(f"Try dowloading checkpoint from huggingface hub: {ranker_path}")
+            snapshot_download(ranker_path, local_dir=cache_dir / ranker_path)
+            ranker_path = cache_dir / ranker_path
+            logging.warning(f"Successfully downloaded checkpoint to '{ranker_path}'")
+        except Exception as e:
+            raise e
+            # try local path
+            logging.warning(f"Failed to download checkpoint from huggingface hub: {ranker_path}")
+            logging.warning(f"Try loading checkpoint from local path: {ranker_path}")
+            if not os.path.exists(ranker_path):
+                raise ValueError(f"Checkpoint '{ranker_path}' does not exist")
+            logging.warning(f"Successfully loaded checkpoint from local path: {ranker_path}")
+        
+        # load ranker config from ranker_path
+        with open(ranker_path / "ranker_config.json", "r") as f:
+            ranker_config_json = json.load(f)
+        ranker_config = RankerConfig.from_dict(ranker_config_json)
+        ranker_config.load_checkpoint = ranker_path
+        self.ranker_config = ranker_config
+        for k, v in kwargs.items():
+            setattr(self.ranker_config, k, v)
+        
+        self.ranker, self.ranker_tokenizer, self.ranker_collator = load_ranker(ranker_config)
+        device = device or self.blender_config.device
+        if device == "cuda" and ranker_config.fp16:
+            self.ranker = self.ranker.half()
+        else:
+            self.ranker = self.ranker.float()
+        self.ranker = self.ranker.to(device)
+        self.ranker.eval()
+    
+    def loadfuser(self, fuser_path:str, device:str=None, **kwargs):
+        """Load fuser from a path
+
+        Args:
+            fuser_path (str): 
+                - Huggingface model path, e.g. "llm-blender/gen-fuser"
+                - Local path, e.g. "/path/to/fuser"
+            device (str): 
+                cuda or cpu or None. If None, will use self.blender_config.device
+            kwargs: 
+                kwargs for GenFuserConfig
+        """
+        self.fuser_config = GenFuserConfig()
+        self.fuser_config.load_checkpoint = fuser_path
+        self.fuser_config.device = device or self.blender_config.device
+        for k, v in kwargs.items():
+            setattr(self.fuser_config, k, v)
+        self.fuser, self.fuser_tokenizer = load_fuser(self.fuser_config)
+        self.fuser.eval()
+        
     def rank(
         self, 
         inputs:List[str], 

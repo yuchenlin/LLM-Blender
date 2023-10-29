@@ -49,7 +49,8 @@ def load_ranker(ranker_config: RankerConfig):
     if ranker_config.load_checkpoint is not None:
         load_checkpoint = Path(ranker_config.load_checkpoint)
         # check if it is a our checkpoint
-        cache_dir = Path(ranker_config.cache_dir) or Path(os.path.expanduser(f"~/.cache"))
+        cache_dir = ranker_config.cache_dir or os.path.expanduser(f"~/.cache")
+        cache_dir = Path(cache_dir)
         if cache_dir.name != "llm-blender":
             cache_dir = cache_dir
         cache_dir.mkdir(parents=True, exist_ok=True)

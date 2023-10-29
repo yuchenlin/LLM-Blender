@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+from dataclasses_json import dataclass_json
+@dataclass_json
 @dataclass
 class GenFuserConfig:
     model_name:str = field(default="llm-blender/gen_fuser_3b",

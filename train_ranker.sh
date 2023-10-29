@@ -1,14 +1,13 @@
 #!/bin/bash
-#SBATCH --time=24:00:00
+#SBATCH --time=72:00:00
 #SBATCH --job-name=train_ranker
 #SBATCH --output ./jobs/train_ranker/%j.out
 #SBATCH --gres=gpu:a6000:1
 #SBATCH --qos=general
 
 nvidia-smi
-
 # <== MODIFY THE FOLLOWING PARAMETERS ==>
-dataset="open_instruct"
+dataset="reward_model_mix_train"
 backbone_type="deberta" # "deberta" or "roberta"
 backbone_name="microsoft/deberta-v3-large" # "microsoft/deberta-v3-large" or "roberta-large"
 n_gpu=1
@@ -23,18 +22,18 @@ fp16=True # whether to use fp16
 
 max_train_data_size=-1 # -1 means no limit
 max_eval_data_size=-1 # -1 means no limit
-max_predict_data_size=50 # -1 means no limit
+max_predict_data_size=-1 # -1 means no limit
 do_inference=False # whether do inference instead of training, i.e. do test
 # for inference, sometimes you want to use a checkpoint trained on another dataset
 # to do inference on a dataset, you can set the checkpoint_trained_dataset to the dataset
 # by default, it is set to the dataset you are doing inference on
 checkpoint_trained_dataset=""
-run_name_postfix="_new" # add a postfix to the run_name
+run_name_postfix="" # add a postfix to the run_name
 TORCHRUN_CMD="torchrun"
 
 # set the dataset specific parameters below
-if [[ $dataset =~ "mix" ]]; then
-    echo "Using mixed general datasets"
+if [[ $dataset =~ "mixinstruct" ]]; then
+    echo "Using mixinstruct general datasets"
     source_maxlength=128
     candidate_maxlength=128
     per_device_train_batch_size=4
@@ -59,6 +58,16 @@ elif [[ $dataset =~ "open_instruct" ]]; then
     per_device_eval_batch_size=2
     gradient_accumulation_steps=16
     using_metrics="comb_rate"
+
+elif [[ $dataset =~ "reward_model" ]]; then
+    echo "Using reward_model user oriented datasets"
+    source_maxlength=1224
+    candidate_maxlength=412
+    per_device_train_batch_size=2
+    per_device_eval_batch_size=2
+    gradient_accumulation_steps=32
+    using_metrics="human_preference"
+
 else
     echo "Unknown dataset: ${dataset}"
     echo "Please set the dataset specific parameters in the script"
@@ -70,6 +79,9 @@ localhost=$RANDOM # random port number
 train_data_path="./data/${dataset}/train_data_prepared.json"
 dev_data_path="./data/${dataset}/val_data_prepared.json"
 test_data_path="./data/${dataset}/test_data_prepared.json"
+if [ ! -f $test_data_path ]; then
+    test_data_path=$dev_data_path
+fi
 
 if [[ $ranker = "PairRanker" ]]; then
     echo "Using PairRanker"

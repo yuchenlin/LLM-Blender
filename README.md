@@ -24,6 +24,14 @@
           <a class="btna" target="_blank" href="http://inklab.usc.edu/">USC-INK</a> &nbsp; 
      </span>
 
+## 🔥News
+
+- [10/29] Add support of other reward models as ranker from 🤗 Hugging Face. E.g. [OpenAssistant/reward-model-deberta-v3-large-v2](https://huggingface.co/OpenAssistant/reward-model-deberta-v3-large-v2)
+
+- [10/28] We release a newly trained PairRanker used for reward model at 🤗 [llm-blender/pair-reward-model](https://huggingface.co/llm-blender/pair-reward-model)
+
+- [10/24] Pre-trained PairRanker is able to be loaded directly from 🤗 Hugging face Models [llm-blender/pair-ranker](https://huggingface.co/llm-blender/pair-ranker) within 3 lines of code. See Guidance for [Rank & Fusion](#rank-and-fusion) for details.
+
 ## Overview
 
 ![LLM-BLender](./docs/llm_blender.png)

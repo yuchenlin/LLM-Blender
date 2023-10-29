@@ -7,7 +7,7 @@ class RankerConfig:
     ranker_type:str = field(
         default="pairranker",
         metadata={"help": "Ranker type, pairranker or reranker \
-                  choices: summareranker, dual, pairranker"},
+                  choices: summareranker, dual, pairranker, other;"},
     )
     model_type:str = field(default="deberta",
         metadata={"help": "Model type, deberta or roberta"}

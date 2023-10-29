@@ -11,6 +11,7 @@ from .collator import (
     DualCollator,
     SCRCollator,
     CrossCompareCollator,
+    OtherRMCollator,
 )
 from transformers import (
     RobertaModel,
@@ -20,7 +21,7 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
     AutoModelForSeq2SeqLM,
-
+    AutoModelForSequenceClassification,
 )
 from transformers.models.roberta.modeling_roberta import RobertaModel
 
@@ -56,6 +57,9 @@ def build_pretrained_model(model_type, model_name, **kwargs):
     elif model_type.startswith("opt"):
         print("\nUsing OPT model")
         model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
+    elif model_type.startswith("other"):
+        print("\nUsing Other model")
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, **kwargs)
     else:
         raise ValueError("Model type not supported")
     
@@ -89,6 +93,8 @@ def build_ranker(ranker_type, model_type, model_name, cache_dir, config, tokeniz
         ranker = DualReranker(pretrained_model, config, tokenizer)
     elif ranker_type == "pairranker":
         ranker = CrossCompareReranker(pretrained_model, config, tokenizer)
+    elif ranker_type == "other":
+        ranker = pretrained_model
     return ranker
 
 def build_collator(
@@ -106,6 +112,8 @@ def build_collator(
         return DualCollator(source_maxlength, tokenizer, candidate_maxlength, source_prefix, candidate1_prefix)
     elif model_type == "pairranker":
         return CrossCompareCollator(source_maxlength, tokenizer, candidate_maxlength, source_prefix, candidate1_prefix, candidate2_prefix)
+    elif model_type == "other":
+        return OtherRMCollator(source_maxlength, tokenizer, candidate_maxlength, "", "")
     else:
         raise ValueError(f"model_type {model_type} not supported")
 

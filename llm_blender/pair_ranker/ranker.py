@@ -142,8 +142,8 @@ class SummaReranker(nn.Module):
         pred_scores = torch.mean(pred_scores, dim=-1).detach().reshape(batch_size, n_candidates)
         pred_scores = self.sigmoid(pred_scores)
         outputs = {
-            "loss": loss,
-            "preds": pred_scores,
+            'loss': loss,
+            'logits': pred_scores,
         }
         return outputs
     
@@ -282,8 +282,8 @@ class DualReranker(nn.Module):
             loss = torch.tensor(0.0).to(source_ids.device)
 
         outputs = {
-            "loss": loss,
-            "preds": sim_mat,
+            'loss': loss,
+            'logits': sim_mat,
         }
         return outputs
 
@@ -489,8 +489,8 @@ class CrossCompareReranker(nn.Module):
 
         preds = (left_pred_scores - right_pred_scores).mean(dim=-1)
         outputs = {
-            "loss": loss,
-            "preds": preds,
+            'loss': loss,
+            'logits': preds,
         }
         return outputs
 
@@ -700,7 +700,7 @@ class CrossCompareReranker(nn.Module):
                     left_scores, right_scores,
                 )
                 loss += _outputs['loss']
-                preds = _outputs['preds']
+                preds = _outputs['logits']
                 # right-left
                 _outputs = self._forward(
                     source_ids, source_attention_mask,
@@ -709,7 +709,7 @@ class CrossCompareReranker(nn.Module):
                     right_scores, left_scores,
                 )
                 loss += _outputs['loss']
-                preds_inv = -_outputs['preds']
+                preds_inv = -_outputs['logits']
 
                 permu[:, j] = torch.where(preds + preds_inv <= 0, cur_idx, next_idx)
                 permu[:, j+1] = torch.where(preds + preds_inv > 0, cur_idx, next_idx)
@@ -771,11 +771,11 @@ class CrossCompareReranker(nn.Module):
                     left_scores, right_scores,
                 )
                 loss += _outputs['loss']
-                preds = _outputs['preds']
+                preds = _outputs['logits']
                 compare_results[:, i, j] = preds
 
         outputs['loss'] = loss / (n_candidates * (n_candidates - 1))
-        outputs['preds'] = compare_results # [batch_size, n_candidates, n_candidates]
+        outputs['logits'] = compare_results # [batch_size, n_candidates, n_candidates]
 
         return outputs
 

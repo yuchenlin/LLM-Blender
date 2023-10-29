@@ -11,7 +11,7 @@ dataset="reward_model_mix_train"
 backbone_type="deberta" # "deberta" or "roberta"
 backbone_name="microsoft/deberta-v3-large" # "microsoft/deberta-v3-large" or "roberta-large"
 n_gpu=1
-ranker="PairRanker" # "PairRanker" or "Summaranker" or "SimCLS"
+ranker="PairRanker" # "PairRanker" or "Summareranker" or "SimCLS"
 candidate_model="" # separted by comma. Empty string for all models
 candidate_decoding_method="" # separted by comma. Empty string for all methods
 n_candidates=-1 # number of candidates to generate
@@ -28,7 +28,7 @@ do_inference=False # whether do inference instead of training, i.e. do test
 # to do inference on a dataset, you can set the checkpoint_trained_dataset to the dataset
 # by default, it is set to the dataset you are doing inference on
 checkpoint_trained_dataset=""
-run_name_postfix="" # add a postfix to the run_name
+run_name_postfix="debug" # add a postfix to the run_name
 TORCHRUN_CMD="torchrun"
 
 # set the dataset specific parameters below
@@ -149,9 +149,9 @@ if [[ $ranker = "PairRanker" ]]; then
         --sub_sampling_mode "all_pair" \
         --overwrite_output_dir True \
 
-elif [[ $ranker = "Summaranker" ]]; then
-    echo "Using Summaranker"
-    ranker_type="summaranker"
+elif [[ $ranker = "Summareranker" ]]; then
+    echo "Using Summareranker"
+    ranker_type="summareranker"
     if [ $do_inference = "True" ]; then
         run_name="debug_${dataset}_${ranker}"
         do_train="False"

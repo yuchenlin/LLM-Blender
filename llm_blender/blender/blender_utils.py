@@ -14,9 +14,12 @@ from ..gen_fuser.config import GenFuserConfig
 from transformers import (
     AutoTokenizer, 
     AutoModelForSeq2SeqLM,
+    AutoModelForSequenceClassification,
 )
 from typing import List
 from huggingface_hub import snapshot_download
+from transformers.utils.hub import TRANSFORMERS_CACHE
+
 def get_torch_dtype(dtype_str):
     """
         Get the torch dtype from a string
@@ -31,6 +34,26 @@ def get_torch_dtype(dtype_str):
         return torch.int8
     else:
         raise ValueError("Invalid dtype {}".format(dtype_str))
+
+def load_other_ranker(ranker_config: RankerConfig):
+    """Load Other Ranker (Reward Model) from config file
+        Currently supporting: 
+            - BERT series model, e.g. OpenAssistant/reward-model-deberta-v3-large-v2
+    """
+    model_name = ranker_config.model_name
+    model = AutoModelForSequenceClassification.from_pretrained(
+        model_name, cache_dir=ranker_config.cache_dir,
+        device_map="auto",
+    )
+    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir=ranker_config.cache_dir)
+    collator = build_collator(
+        "other",
+        tokenizer,
+        ranker_config.source_maxlength,
+        ranker_config.candidate_maxlength,
+    )
+    return model, tokenizer, collator
+    
     
 def load_ranker(ranker_config: RankerConfig):
     """Load PairRanker model from config file"""
@@ -47,28 +70,8 @@ def load_ranker(ranker_config: RankerConfig):
         tokenizer,
     )
     if ranker_config.load_checkpoint is not None:
+        # load checkpoint from local path
         load_checkpoint = Path(ranker_config.load_checkpoint)
-        # check if it is a our checkpoint
-        cache_dir = ranker_config.cache_dir or os.path.expanduser(f"~/.cache")
-        cache_dir = Path(cache_dir)
-        if cache_dir.name != "llm-blender":
-            cache_dir = cache_dir
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        our_checkpoint_names = ["llm-blender/pair-ranker", "llm-blender/pair-reward-model"]
-        
-        if ranker_config.load_checkpoint in our_checkpoint_names:
-            assert ranker_config.ranker_type == "pairranker", f"{ranker_config.load_checkpoint} is only available for pairranker"
-            assert ranker_config.model_name == "microsoft/deberta-v3-large", f"{ranker_config.load_checkpoint} is only available for microsoft/deberta-v3-large"
-        if not load_checkpoint.exists():
-            # try load from huggingface hub
-            load_checkpoint = cache_dir / ranker_config.load_checkpoint
-            logging.warning(f"Checkpoint '{load_checkpoint}' does not exist")
-            logging.warning(f"Try dowloading checkpoint from huggingface hub: {ranker_config.load_checkpoint}")                
-            snapshot_download(ranker_config.load_checkpoint, local_dir=load_checkpoint)
-            logging.warning(f"Successfully downloaded checkpoint to '{load_checkpoint}'")
-        else:
-            # load checkpoint from local path
-            load_checkpoint = Path(load_checkpoint)
         if load_checkpoint.name == "pytorch_model.bin":
             load_checkpoint = load_checkpoint.parent
         

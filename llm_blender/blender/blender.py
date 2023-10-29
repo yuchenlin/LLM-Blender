@@ -8,6 +8,7 @@ from typing import List, Union
 from pathlib import Path
 from .blender_utils import (
     load_ranker, 
+    load_other_ranker,
     load_fuser,
     RankerDataset,
     GenFuserDataset,
@@ -22,6 +23,7 @@ from ..pair_ranker.config import RankerConfig
 from ..gen_fuser.config import GenFuserConfig
 from .config import BlenderConfig
 from huggingface_hub import snapshot_download
+from transformers.utils.hub import TRANSFORMERS_CACHE
 from tqdm import tqdm
 
 
@@ -68,6 +70,12 @@ class Blender:
         
     def loadranker(self, ranker_path:str, device:str=None, **kwargs):
         """Load ranker from a path
+            Supportted rankers:
+                - llm-blender/pair-ranker
+                - llm-blender/pair-reward-model
+                - OpenAssistant/reward-model-deberta-v3-large-v2
+                - Other rankers that can be loaded by transformers.AutoModelForSequenceClassification
+                - Local path, e.g. "/path/to/ranker"
 
         Args:
             ranker_path (str):
@@ -79,7 +87,8 @@ class Blender:
                 kwargs for RankerConfig
                 
         """
-        cache_dir = kwargs.pop("cache_dir", Path(os.path.expanduser(f"~/.cache")))
+        cache_dir = kwargs.pop("cache_dir", TRANSFORMERS_CACHE)
+        cache_dir = Path(cache_dir)
         try:
             # try hugging face hub
             logging.warning(f"Try dowloading checkpoint from huggingface hub: {ranker_path}")
@@ -87,23 +96,35 @@ class Blender:
             ranker_path = cache_dir / ranker_path
             logging.warning(f"Successfully downloaded checkpoint to '{ranker_path}'")
         except Exception as e:
-            raise e
             # try local path
             logging.warning(f"Failed to download checkpoint from huggingface hub: {ranker_path}")
+            logging.warning(f"Erorr: {e}")
             logging.warning(f"Try loading checkpoint from local path: {ranker_path}")
             if not os.path.exists(ranker_path):
                 raise ValueError(f"Checkpoint '{ranker_path}' does not exist")
             logging.warning(f"Successfully loaded checkpoint from local path: {ranker_path}")
         
         # load ranker config from ranker_path
-        with open(ranker_path / "ranker_config.json", "r") as f:
-            ranker_config_json = json.load(f)
-        ranker_config = RankerConfig.from_dict(ranker_config_json)
-        ranker_config.load_checkpoint = ranker_path
+        if not os.path.exists(ranker_path / "ranker_config.json"):
+            # other ranker type
+            ranker_config_json = {
+                "ranker_type": "other",
+                "model_type": "other",
+                "model_name": str(ranker_path),
+                "cache_dir": cache_dir,
+            }
+            ranker_config = RankerConfig.from_dict(ranker_config_json)
+        else:
+            with open(ranker_path / "ranker_config.json", "r") as f:
+                ranker_config_json = json.load(f)
+            ranker_config = RankerConfig.from_dict(ranker_config_json)
+            ranker_config.load_checkpoint = str(ranker_path)
+            ranker_config.cache_dir = cache_dir
+            
         self.ranker_config = ranker_config
         for k, v in kwargs.items():
             setattr(self.ranker_config, k, v)
-        
+    
         self.ranker, self.ranker_tokenizer, self.ranker_collator = load_ranker(ranker_config)
         device = device or self.blender_config.device
         if device == "cuda" and ranker_config.fp16:
@@ -112,7 +133,7 @@ class Blender:
             self.ranker = self.ranker.float()
         self.ranker = self.ranker.to(device)
         self.ranker.eval()
-    
+        
     def loadfuser(self, fuser_path:str, device:str=None, **kwargs):
         """Load fuser from a path
 
@@ -132,7 +153,7 @@ class Blender:
             setattr(self.fuser_config, k, v)
         self.fuser, self.fuser_tokenizer = load_fuser(self.fuser_config)
         self.fuser.eval()
-        
+    
     def rank(
         self, 
         inputs:List[str], 
@@ -158,6 +179,8 @@ class Blender:
             logging.warning("No ranker loaded, please load ranker first through load_ranker()")
             return None
         assert len(inputs) == len(candidates), "Number of inputs and candidates must be the same"
+        assert all([len(c) > 0 for c in candidates]), "Each input must have at least one candidate"
+        assert all([len(c) == len(candidates[0]) for c in candidates]), "Number of candidates for each input must be the same"
         collate_fn = copy.copy(self.ranker_collator)
         collate_fn.source_maxlength = rank_kwargs.get("source_max_length", None) or self.ranker_config.source_maxlength
         collate_fn.candidate_maxlength = rank_kwargs.get("candidate_max_length", None) or self.ranker_config.candidate_maxlength
@@ -167,9 +190,17 @@ class Blender:
         with torch.no_grad():
             for batch in tqdm(iter(dataloader), desc="Ranking candidates"):
                 batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
-                outputs = self.ranker._full_predict(**batch)
-                preds = outputs['preds'].detach().cpu().numpy()
-                batch_scores = get_scores_from_cmps(preds)
+                if self.ranker_config.ranker_type == "pairranker":
+                    outputs = self.ranker._full_predict(**batch)
+                    preds = outputs['logits'].detach().cpu().numpy()
+                    batch_scores = get_scores_from_cmps(preds)
+                elif self.ranker_config.ranker_type in ["summareranker", "simcls"]:
+                    outputs = self.ranker(**batch)
+                    batch_scores = outputs['logits'].detach().cpu().numpy()
+                elif self.ranker_config.ranker_type == "other":
+                    outputs = self.ranker(**batch)
+                    batch_scores = outputs.logits.detach().cpu().numpy()
+                    batch_scores = batch_scores.squeeze(-1).reshape(batch_size, len(candidates[0]))
                 scores.append(batch_scores)
         scores = np.concatenate(scores, axis=0)
         if return_scores:

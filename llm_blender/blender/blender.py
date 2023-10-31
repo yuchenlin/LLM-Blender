@@ -53,17 +53,14 @@ class Blender:
         if self.ranker_config is None:
             logging.warning("No ranker config provided, no ranker loaded, please load ranker first through load_ranker()")
         else:
-            self.ranker, self.ranker_tokenizer, self.ranker_collator = load_ranker(ranker_config)
-            if self.blender_config.device == "cuda" and ranker_config.fp16:
-                self.ranker = self.ranker.half()
-            else:
-                self.ranker = self.ranker.float()
-            self.ranker = self.ranker.to(self.blender_config.device)
-            self.ranker.eval()
+            ranker_path = self.ranker_config.load_checkpoint
+            self.loadranker(ranker_path, **self.ranker_config.to_dict())
         
         if self.fuser_config is None:
             logging.warning("No fuser config provided, no fuser loaded, please load fuser first through load_fuser()")
         else:
+            fuser_path = self.fuser_config.load_checkpoint
+            self.loadfuser(fuser_path, **self.fuser_config.to_dict())
             fuser_config.device = self.blender_config.device
             self.fuser, self.fuser_tokenizer = load_fuser(fuser_config)
             self.fuser.eval()
@@ -114,16 +111,20 @@ class Blender:
                 "cache_dir": cache_dir,
             }
             ranker_config = RankerConfig.from_dict(ranker_config_json)
+            self.ranker_config = ranker_config
+            for k, v in kwargs.items():
+                setattr(self.ranker_config, k, v)
         else:
             with open(ranker_path / "ranker_config.json", "r") as f:
                 ranker_config_json = json.load(f)
             ranker_config = RankerConfig.from_dict(ranker_config_json)
             ranker_config.load_checkpoint = str(ranker_path)
             ranker_config.cache_dir = cache_dir
-            
-        self.ranker_config = ranker_config
-        for k, v in kwargs.items():
-            setattr(self.ranker_config, k, v)
+            self.ranker_config = ranker_config
+            for k, v in kwargs.items():
+                if k in ['load_checkpoint', 'cache_dir']:
+                    continue
+                setattr(self.ranker_config, k, v)
     
         self.ranker, self.ranker_tokenizer, self.ranker_collator = load_ranker(ranker_config)
         device = device or self.blender_config.device
@@ -207,6 +208,63 @@ class Blender:
             return scores
         else:
             return get_ranks_from_scores(scores)
+    
+    def compare_conversations(
+        self,
+        conversations_a:List[List[dict]],
+        conversations_b:List[List[dict]],
+    ):
+        """Compare two conversations by takeing USER turns as inputs and ASSISTANT turns as candidates
+            Multi-turn conversations comparison is also supportted.
+            a conversation format is:
+            ```python
+            [
+                {
+                    "content": "hello",
+                    "role": "USER"
+                },
+                {
+                    "content": "hi",
+                    "role": "ASSISTANT"
+                },
+                ...
+            ]
+            ```
+
+        Args:
+            conversations_a (List[List[dict]]): List of conversations
+            conversations_b (List[List[dict]]): List of conversations
+        """
+        # check role correctness
+        for c in conversations_a + conversations_b:
+            assert len(c) % 2 == 0, "Each conversation must have even number of turns"
+            assert all([c[i]['role'] == 'USER' for i in range(0, len(c), 2)]), "Each even turn must be USER"
+            assert all([c[i]['role'] == 'ASSISTANT' for i in range(1, len(c), 2)]), "Each odd turn must be ASSISTANT"
+        # check conversations correctness
+        assert len(conversations_a) == len(conversations_b), "Number of conversations must be the same"
+        for c_a, c_b in zip(conversations_a, conversations_b):
+            assert len(c_a) == len(c_b), "Number of turns in each conversation must be the same"
+            assert all([c_a[i]['content'] == c_b[i]['content'] for i in range(0, len(c_a), 2)]), "USER turns must be the same"
+        
+        instructions = ["Finish the following coversation in each i-th turn by filling in <Response i> with your response."] * len(conversations_a)
+        inputs = [
+            "\n".join([
+                "USER: " + x[i]['content'] +
+                f"\nAssistant: <Response {i//2+1}>" for i in range(0, len(x), 2)
+            ]) for x in conversations_a
+        ]
+        cand1_texts = [
+            "\n".join([
+                f"<Response {i//2+1}>: " + x[i]['content'] for i in range(1, len(x), 2)
+            ]) for x in conversations_a
+        ]
+        cand2_texts = [
+            "\n".join([
+                f"<Response {i//2+1}>: " + x[i]['content'] for i in range(1, len(x), 2)
+            ]) for x in conversations_b
+        ]
+        return self.compare(inputs, cand1_texts, cand2_texts, instructions)
+        
     
     def compare(self, 
         inputs: List[str], 

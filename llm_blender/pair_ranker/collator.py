@@ -204,8 +204,16 @@ class CrossCompareCollator(object):
             scores = None
             
         source_ids, source_masks = encode_texts(batch_source, self.tokenizer, self.source_maxlength)
-        candidate_ids, candidate_masks = encode_batch_text(batch_candidates, self.tokenizer, self.candidate_maxlength)
-
+        valid_positions = source_masks.any(dim=0)
+        source_ids = source_ids[:, valid_positions]
+        source_masks = source_masks[:, valid_positions]
+        remaining_length = self.source_maxlength - valid_positions.sum().item()
+        
+        candidate_ids, candidate_masks = encode_batch_text(batch_candidates, self.tokenizer, self.candidate_maxlength + remaining_length // 2)
+        cand_valid_positions = candidate_masks.reshape(-1, candidate_masks.shape[-1]).any(dim=0)
+        candidate_ids = candidate_ids[:, :, cand_valid_positions]
+        candidate_masks = candidate_masks[:, :, cand_valid_positions]
+        
         return {
             "source_ids" : source_ids,
             "source_attention_mask" : source_masks,

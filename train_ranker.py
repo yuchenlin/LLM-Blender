@@ -15,7 +15,7 @@ import pprint
 import warnings
 import logging
 from transformers import TrainingArguments
-from transformers.trainer_utils import PredictionOutput
+from transformers.trainer_utils import PredictionOutput, is_main_process
 warnings.filterwarnings("ignore")
 from llm_blender.common.utils import (
     str2bool,
@@ -198,10 +198,11 @@ def main(args):
         for key, value in metrics.items():
             logging.info(f"{key} = {value}")
 
-        logging.info("Saving model")
-        best_checkpoint_folder = os.path.join(args.output_dir, "checkpoint-best")
-        trainer.save_model(best_checkpoint_folder)
-        torch.save(model.args, os.path.join(best_checkpoint_folder, "config.bin"))
+        if is_main_process(training_args.local_rank):
+            logging.info("Saving model")
+            best_checkpoint_folder = os.path.join(args.output_dir, "checkpoint-best")
+            trainer.save_model(best_checkpoint_folder)
+            torch.save(model.args, os.path.join(best_checkpoint_folder, "config.bin"))
 
     if args.do_predict:
         logging.info("Start predicting")
@@ -212,7 +213,7 @@ def main(args):
         logging.info(f"metrics: {metrics}")
 
         # save predictions
-        if args.save_predictions:
+        if args.save_predictions and is_main_process(training_args.local_rank):
             if args.output_dir is None:
                 raise ValueError("output_dir must be set to save predictions")
             output_path = os.path.join(args.output_dir, "predictions.pt")

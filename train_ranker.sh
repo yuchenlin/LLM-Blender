@@ -10,7 +10,7 @@ nvidia-smi
 dataset="reward_model_mix_train"
 backbone_type="deberta" # "deberta" or "roberta"
 backbone_name="microsoft/deberta-v3-large" # "microsoft/deberta-v3-large" or "roberta-large"
-n_gpu=1
+n_gpu=4
 ranker="PairRanker" # "PairRanker" or "Summareranker" or "SimCLS"
 candidate_model="" # separted by comma. Empty string for all models
 candidate_decoding_method="" # separted by comma. Empty string for all methods
@@ -28,7 +28,7 @@ do_inference=False # whether do inference instead of training, i.e. do test
 # to do inference on a dataset, you can set the checkpoint_trained_dataset to the dataset
 # by default, it is set to the dataset you are doing inference on
 checkpoint_trained_dataset=""
-run_name_postfix="debug" # add a postfix to the run_name
+run_name_postfix="_10_31" # add a postfix to the run_name
 TORCHRUN_CMD="torchrun"
 
 # set the dataset specific parameters below
@@ -64,8 +64,8 @@ elif [[ $dataset =~ "reward_model" ]]; then
     source_maxlength=1224
     candidate_maxlength=412
     per_device_train_batch_size=2
-    per_device_eval_batch_size=2
-    gradient_accumulation_steps=32
+    per_device_eval_batch_size=1
+    gradient_accumulation_steps=8
     using_metrics="human_preference"
 
 else
@@ -76,8 +76,8 @@ fi
 
 # <== Less likely to modify the following parameters ==>
 localhost=$RANDOM # random port number
-train_data_path="./data/${dataset}/train_data_prepared.json"
-dev_data_path="./data/${dataset}/val_data_prepared.json"
+train_data_path="./data/${dataset}/train_data_prepared_10_31.json"
+dev_data_path="./data/${dataset}/val_data_prepared_10_31.json"
 test_data_path="./data/${dataset}/test_data_prepared.json"
 if [ ! -f $test_data_path ]; then
     test_data_path=$dev_data_path

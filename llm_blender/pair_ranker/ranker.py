@@ -738,16 +738,25 @@ class CrossCompareReranker(nn.Module):
         candidate_attention_mask,
         scores=None,
     ):
+        """
+            Do predict over each group of candidates
+        Args:
+            source_ids: [batch_size, src_len]
+            source_attention_mask: [batch_size, src_len]
+            candidate_ids: [batch_size, n_candidates, cand_len]
+            candidate_attention_mask: [batch_size, n_candidates, cand_len]
+            scores: [batch_size, n_candidates, n_tasks] (optional)
+        Returns:
+            loss: scalar if scores is not None
+            logits: [batch_size, n_candidates, n_candidates]
+                complete pairwise comparison as a comparison matrix for each instance in the batch
+        """
         device = source_ids.device
         outputs = {}
         batch_size, src_len = source_ids.shape
         batch_size, n_candidates, cand_len = candidate_ids.shape
 
         loss = torch.tensor(0.0).to(device)
-        cand1_prefix_ids = torch.tensor(self.tokenizer.cand1_prefix_id).to(device)
-        cand1_prefix_ids = cand1_prefix_ids.expand(batch_size, 1)
-        cand2_prefix_ids = torch.tensor(self.tokenizer.cand2_prefix_id).to(device)
-        cand2_prefix_ids = cand2_prefix_ids.expand(batch_size, 1)
 
         compare_results = torch.zeros(batch_size, n_candidates, n_candidates, device=device)
         for i in range(n_candidates):

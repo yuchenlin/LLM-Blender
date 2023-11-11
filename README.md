@@ -26,8 +26,7 @@
 
 ## 🔥News
 
-- [10/29] Add support of other reward models as ranker from 🤗 Hugging Face. E.g. [OpenAssistant/reward-model-deberta-v3-large-v2](https://huggingface.co/OpenAssistant/reward-model-deberta-v3-large-v2)
-
+- [11/10] Glad to announce that our pairwise reward-model, 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), has released. It's trained on high-quality and large-scale human reference dataset and approaches GPT-4's alignment with human preference with a extremly small model size (0.4B).
 - [10/28] We release a newly trained PairRanker used for reward model at 🤗 [llm-blender/pair-reward-model](https://huggingface.co/llm-blender/pair-reward-model)
 
 - [10/24] Pre-trained PairRanker is able to be loaded directly from 🤗 Hugging face Models [llm-blender/pair-ranker](https://huggingface.co/llm-blender/pair-ranker) within 3 lines of code. See Guidance for [Rank & Fusion](#rank-and-fusion) for details.
@@ -61,7 +60,7 @@ pip install git+https://github.com/yuchenlin/LLM-Blender.git
 ```
 Then you are good to go through our LLM-Blender with `import llm_blender`.
 
-### Rank and Fusion
+### Use case 1: Rank and Fusion (LLM-Blender)
 
 
 ```python
@@ -102,9 +101,44 @@ candidates_B = [cands[1] for cands in candidates]
 comparison_results = blender.compare(inputs, candidates_A, candidates_B)
 # comparison_results is a list of bool, where element[i] denotes whether candidates_A[i] is better than candidates_B[i] for inputs[i]
 ```
-- Check more details on our example jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)
 
+### Use case 2: Best-of-n Sampling (Decoding Enhancing)
+**Best-of-n Sampling**, aka, rejection sampling, is a strategy to enhance the response quality by selecting the one that was ranked highest by the reward model (Learn more at[OpenAI WebGPT section 3.2](https://arxiv.org/pdf/2112.09332.pdf) and [OpenAI Blog](https://openai.com/research/measuring-goodharts-law)). 
 
+Best-of-n sampling is a easy way to imporve your llm power with just a few lines of code. An example of applying on zephyr is as follows.
+
+```python
+from transformers import AutoTokenizer, AutoModelForCausalLM
+
+tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
+model = AutoModelForCausalLM.from_pretrained("HuggingFaceH4/zephyr-7b-beta", device_map="auto")
+
+system_message = {
+    "role": "system",
+    "content": "You are a friendly chatbot who always responds in the style of a pirate",
+}
+messages = [
+    [   
+        system_message,
+        {"role": "user", "content": _inst + "\n" + _input},
+    ]
+    for _inst, _input in zip(insts, inputs)
+]
+prompts = [tokenizer.apply_chat_template(m, tokenize=False, add_generation_prompt=True) for m in messages]
+outputs = blender.best_of_n_generate(model, tokenizer, prompts, n=10)
+print("### Prompt:")
+print(prompts[0])
+print("### best-of-n generations:")
+print(outputs[0])
+```
+### Use case 3: RLHF 
+Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, has exhibitted great correlation with human preferences with an extremly small model size (0.4B), approching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
+
+With a `blender.compare()` function, you can easily apply PairRM to poopular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 
+
+**🔥 Check more details on our example jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)**
+
+###
 
 ## Data Release
 
@@ -117,8 +151,8 @@ comparison_results = blender.compare(inputs, candidates_A, candidates_B)
 
 <div align="center"> <img src=./docs/intro.png width=70%/> </div>
 
-
 ## Training
+<details><summary>Train PairRanker</summary>
 
 See more details in [`train_ranker.sh`](./train_ranker.sh)
 
@@ -176,7 +210,7 @@ dataset=<A>
 checkpoint_trained_dataset=<B>
 do_inference=True
 ```
-
+</details>
 
 
 

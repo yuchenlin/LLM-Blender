@@ -3,6 +3,7 @@ import os
 import torch
 import logging
 import numpy as np
+import safetensors
 from pathlib import Path
 from ..pair_ranker.model_util import (
     build_ranker,
@@ -75,12 +76,27 @@ def load_ranker(ranker_config: RankerConfig):
         if load_checkpoint.name == "pytorch_model.bin":
             load_checkpoint = load_checkpoint.parent
         
-        state_dict = torch.load(load_checkpoint/"pytorch_model.bin", map_location="cpu")
-        load_result = ranker.load_state_dict(state_dict, strict=False)
-        if load_result.missing_keys:
-            logging.warning(f"Missing keys: {load_result.missing_keys}")
+        if (load_checkpoint/"pytorch_model.bin").exists():
+            # pytorch_model.bin
+            state_dict = torch.load(load_checkpoint/"pytorch_model.bin", map_location="cpu")
+            load_result = ranker.load_state_dict(state_dict, strict=False)
+            if load_result.missing_keys:
+                logging.warning(f"Missing keys: {load_result.missing_keys}")
+            else:
+                logging.info(f"Successfully loaded checkpoint from '{load_checkpoint}'")
+        elif (load_checkpoint/"model.safetensors").exists():
+            # model.safetensors
+            load_result = safetensors.torch.load_model(ranker, load_checkpoint/"model.safetensors")
+            missing_keys, unexpected_keys = load_result
+            if missing_keys:
+                logging.warning(f"Missing keys: {missing_keys}")
+            if unexpected_keys:
+                logging.warning(f"Unexpected keys: {unexpected_keys}")
+            if not missing_keys and not unexpected_keys:
+                logging.info(f"Successfully loaded checkpoint from '{load_checkpoint}'")
         else:
-            logging.info(f"Successfully loaded checkpoint from '{load_checkpoint}'")
+            raise ValueError(f"Cannot find pytorch_model.bin or model.safetensors in {load_checkpoint}")
+        
     return ranker, tokenizer, collator
 
 def get_topk_candidates_from_ranks(ranks:List[List[int]], candidates:List[List[str]], top_k:int):

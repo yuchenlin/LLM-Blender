@@ -39,6 +39,10 @@ setup(
         'protobuf<=3.20.1',
         'wandb',
         'sacrebleu',
-        'dataclasses-json'
+        'dataclasses-json',
+        'accelerate',
+        'bitsandbytes',
+        'peft',
+        'safetensors'
     ],
 )

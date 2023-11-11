@@ -29,36 +29,26 @@ from transformers.models.roberta.modeling_roberta import RobertaModel
 def build_pretrained_model(model_type, model_name, **kwargs):
     model = None
     if model_type.startswith("roberta"):
-        print("\nUsing RoBERTa model")
         model = RobertaModel.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("bert"):
-        print("\nUsing BERT model")
         model = BertModel.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("t5"):
-        print("\nUsing T5 model")
         model = T5ForConditionalGeneration.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("bart"):
-        print("\nUsing BART model")
         model = BartForConditionalGeneration.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("deberta"):
-        print("\nUsing DeBERTa model")
         from transformers import AutoModel
         model = AutoModel.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("xlm-roberta"):
-        print("\nUsing XLM-RoBERTa model")
         from transformers import XLMRobertaModel
         model = XLMRobertaModel.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("alpaca") or model_type.startswith("llama"):
-        print("\nUsing Alpaca/Llama model")
         model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("flan-t5"):
-        print("\nUsing Flan-T5 model")
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("opt"):
-        print("\nUsing OPT model")
         model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("other"):
-        print("\nUsing Other model")
         model = AutoModelForSequenceClassification.from_pretrained(model_name, **kwargs)
     else:
         raise ValueError("Model type not supported")

@@ -153,9 +153,9 @@ def get_scores_from_cmps(cmp_results, policy="max_logits"):
     scores = np.zeros((bz, c), dtype=np.float32)
     for i in range(bz):
         if policy == "max_logits":
-            scores[i] = (cmp_results[i] - cmp_results[i].T).sum(axis=-1)
+            scores[i] = (cmp_results[i] - cmp_results[i].T).mean(axis=-1)
         elif policy == "max_wins":
-            scores[i] = (cmp_results[i] > 0).sum(axis=-1) + (cmp_results[i] < 0).sum(axis=-2)
+            scores[i] = (cmp_results[i] > 0).sum(axis=-1) + (cmp_results[i] < 0).mean(axis=-2)
     return scores
 
 def get_ranks_from_scores(scores):

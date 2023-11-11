@@ -145,7 +145,6 @@ def main(args):
         local_rank=args.local_rank,
         fp16=args.fp16,
         deepspeed=args.deepspeed, #
-        sharded_ddp=args.sharded_ddp,
         label_names=args.label_names,
         evaluation_strategy=args.evaluation_strategy,
         save_strategy=args.save_strategy,
@@ -269,7 +268,6 @@ if __name__ == "__main__":
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument('--fp16', type=str2bool, default=True)
     parser.add_argument('--deepspeed', type=str, default=None) # "ds_config.json"
-    parser.add_argument('--sharded_ddp', type=str, default="simple")
     parser.add_argument("--local_rank", type=int, default=-1, help="Local rank. Necessary for using the torch.distributed.launch utility.")
 
     # mode

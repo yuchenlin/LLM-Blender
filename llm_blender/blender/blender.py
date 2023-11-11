@@ -59,7 +59,7 @@ class Blender:
         if self.fuser_config is None:
             logging.warning("No fuser config provided, no fuser loaded, please load fuser first through load_fuser()")
         else:
-            fuser_path = self.fuser_config.load_checkpoint
+            fuser_path = self.fuser_config.model_name
             self.loadfuser(fuser_path, **self.fuser_config.to_dict())
             fuser_config.device = self.blender_config.device
             self.fuser, self.fuser_tokenizer = load_fuser(fuser_config)
@@ -70,6 +70,7 @@ class Blender:
             Supportted rankers:
                 - llm-blender/pair-ranker
                 - llm-blender/pair-reward-model
+                - llm-blender/PairRM
                 - OpenAssistant/reward-model-deberta-v3-large-v2
                 - Other rankers that can be loaded by transformers.AutoModelForSequenceClassification
                 - Local path, e.g. "/path/to/ranker"
@@ -99,9 +100,9 @@ class Blender:
             logging.warning(f"Try loading checkpoint from local path: {ranker_path}")
             if not os.path.exists(ranker_path):
                 raise ValueError(f"Checkpoint '{ranker_path}' does not exist")
-            logging.warning(f"Successfully loaded checkpoint from local path: {ranker_path}")
         
         # load ranker config from ranker_path
+        ranker_path = Path(ranker_path)
         if not os.path.exists(ranker_path / "ranker_config.json"):
             # other ranker type
             ranker_config_json = {
@@ -148,7 +149,7 @@ class Blender:
                 kwargs for GenFuserConfig
         """
         self.fuser_config = GenFuserConfig()
-        self.fuser_config.load_checkpoint = fuser_path
+        self.fuser_config.model_name = fuser_path
         self.fuser_config.device = device or self.blender_config.device
         for k, v in kwargs.items():
             setattr(self.fuser_config, k, v)
@@ -230,7 +231,6 @@ class Blender:
                 ...
             ]
             ```
-
         Args:
             conversations_a (List[List[dict]]): List of conversations
             conversations_b (List[List[dict]]): List of conversations
@@ -264,14 +264,52 @@ class Blender:
             ]) for x in conversations_b
         ]
         return self.compare(inputs, cand1_texts, cand2_texts, instructions)
-        
+    
+    def get_best_of_n(
+        self, 
+        inputs:List[str], 
+        candidates:List[List[str]], 
+        instructions:List[str]=None, 
+        batch_size:int=8,
+    ):
+        """Get the best of n candidates for each input using the ranker
+        Args:
+            inputs List[str]: List of input texts
+            candidates List[List[str]]: List of list of candidate texts, meaning each input can have multiple candidates
+            instructions List[str]: List of instructions. if not None, will be prepended to the corresponding input
+            batch_size int: batch size for ranking
+        Returns:
+            best_candidates List[str]: Best candidates against the ranker for each input
+        """
+        if self.ranker_config.ranker_type == "pairranker":
+            # use bubble sort single run to get the best of n for quicker speed
+            collate_fn = copy.copy(self.ranker_collator)
+            dataset = RankerDataset(inputs, candidates, instructions=instructions)
+            dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+            best_idxs = []
+            with torch.no_grad():
+                for batch in tqdm(iter(dataloader), desc="Ranking candidates"):
+                    batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
+                    outputs = self.ranker._bubble_predict(**batch)
+                    best_idx = outputs['select_process'][:, 2, -1]
+                    best_idxs.append(best_idx.detach().cpu().numpy())
+            best_idxs = np.concatenate(best_idxs, axis=0)
+            best_candidates = np.array(candidates)[np.arange(len(candidates)), best_idxs].tolist()
+        else:
+            ranks = self.rank(inputs, candidates, instructions=instructions, batch_size=batch_size)
+            best_candidates = get_topk_candidates_from_ranks(ranks, candidates, top_k=1)
+            best_candidates = [x[0] for x in best_candidates]
+        return best_candidates
+            
     
     def compare(self, 
         inputs: List[str], 
         candidates_A: List[str], 
         candidates_B:List[str], 
         instructions:List[str]=None, 
-        batch_size:int=4
+        batch_size:int=4,
+        return_logits:bool=False,
+        mode:str="[A,B]+[B,A]",
     ):
         """Compare candidates for each input
         Args:
@@ -280,8 +318,25 @@ class Blender:
             candidates_B: List of candidate strings
             instructions: List of instruction strings. if not None, will be prepended to the corresponding input
             batch_size: Batch size
+            return_logits: If True, will return logits instead of comparison results as bool
+            mode: 
+                Control the compare mode, mianly deal with the effects of position bias if the model is pairwise scoring model.
+                For typical reward models that do individual scoring, this mode makes no difference.
+                - "[A,B]": 
+                    concat A (left) and B (right) as the input. 
+                - "[B,A]"
+                    concat B (left) and A (right) as the input.
+                - "[A,B]+[B,A]": 
+                    1. concat A (left) and B (right) as the input for the first-time scoring.
+                    2. concat B (left) and A (right) as the input for the second-time scoring.
+                    3. The comparison result is the average of the two scoring results.
+                    The comparison result is always consistent with the order of candidates
+                "[A,B]+[B,A]" is recommended for pairwise scoring models.
         Return:
-            comparison_results: List[bool], True if A is better than B, False otherwise
+            comparison_results: 
+                - List[float], logits as confidence that A is better than B. 
+                    >0 means A is better than B, <0 means B is better than A
+                - List[bool], True if A is better than B, False otherwise
             """
         if self.ranker is None:
             logging.warning("No ranker loaded, please load ranker first through load_ranker()")
@@ -289,9 +344,41 @@ class Blender:
         assert len(candidates_A) == len(candidates_B), "Number of candidates_A and candidates_B must be the same"
         assert len(inputs) == len(candidates_A), "Number of inputs and candidates must be the same"
         candidates = [[a, b] for a, b in zip(candidates_A, candidates_B)]
-        scores = self.rank(inputs, candidates, return_scores=True, instructions=instructions, batch_size=batch_size)
-        return scores[:, 0] > scores[:, 1]
-    
+        
+        if mode in ["[A,B]", "[B,A]"] and self.ranker_config.ranker_type == "pairranker":
+            if mode == "[B,A]":
+                candidates = [[b, a] for a, b in zip(candidates_A, candidates_B)]
+            collate_fn = copy.copy(self.ranker_collator)
+            dataset = RankerDataset(inputs, candidates, instructions=instructions)
+            dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+            cmp_results = []
+            with torch.no_grad():
+                for batch in tqdm(iter(dataloader), desc="Ranking candidates"):
+                    batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
+                    source_ids, source_attention_mask = batch['source_ids'], batch['source_attention_mask']
+                    left_cand_ids, left_cand_attention_mask = batch['candidate_ids'][:, 0], batch['candidate_attention_mask'][:, 0]
+                    right_cand_ids, right_cand_attention_mask = batch['candidate_ids'][:, 1], batch['candidate_attention_mask'][:, 1]
+                    if batch.get('scores', None) is None:
+                        left_scores, right_scores = None, None
+                    else:
+                        left_scores, right_scores = batch['scores'][:, 0], batch['scores'][:, 1]
+                    outputs = self.ranker._forward(
+                        source_ids, source_attention_mask,
+                        left_cand_ids, left_cand_attention_mask,
+                        right_cand_ids, right_cand_attention_mask,
+                        left_scores, right_scores,
+                    )
+                    cmp_results.append(outputs['logits'].detach().cpu().numpy())
+            cmp_results = np.concatenate(cmp_results, axis=0)
+        else:
+            # other ranker type, simple rank
+            scores = self.rank(inputs, candidates, return_scores=True, instructions=instructions, batch_size=batch_size)
+            cmp_results = scores[:, 0] - scores[:, 1]
+        if return_logits:
+            return cmp_results
+        else:
+            return cmp_results > 0
+
     def fuse(
         self, 
         inputs:List[str], 
@@ -337,6 +424,96 @@ class Blender:
             _generations = self.fuser_tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             generations.extend(_generations)
         return generations
+
+    def best_of_n_generate(
+        self,
+        model,
+        model_tokenizer,
+        inputs,
+        instructions:List[str]=None,
+        n:int=5,
+        sampling_mode:str="top_p_sampling",
+        batch_size:int=4,
+        **generate_kwargs
+    ):
+        """Decoding enhance generate. 
+            In this process, we will generate multiple generations for each input,
+            Then we will rank these generations and only return the top-k generations,
+            thus enhancing the quality of generations.
+
+        Args:
+            model: 
+                Huggingface model that could generate with .generate(**generate_kwargs)
+            model_tokenizer: 
+                Huggingface tokenizer that could tokenize with .__call__(**generate_kwargs)
+            inputs List[str]: 
+                List of input texts
+            instructions List[str]: 
+                List of instructions. if not None, will be prepended to the corresponding input
+            n int: 
+                the n parameter in best-of-n. That is, how many samples to generate for ranking for each input
+            sampling_mode: 
+                "top_k_sampling" or "top_p_sampling"
+                if None, will use custom sampling strategy by generate_kwargs
+            batch_size int: 
+                batch size for generation
+            generate_kwargs: 
+                kwargs for model.generate()
+                recommended kwargs:
+                    - max_new_tokens: max length of the generation. If not specified, will use model_tokenizer.model_max_length
+                    - top_k: if mode is "top_k_sampling", will use this top_k. if not specified, will use 50
+                    - top_p: if mode is "top_p_sampling", will use this top_p. if not specified, will use 1.0
+                    - temperature: temperature for sampling. if not specified, will use 0.7
+                Note that num_return_sequences will be set to n, so you don't need to specify it
+                    
+        Returns:
+            best_of_n_outputs List[str]: List of best-of-n generations for each input
+        """
+        assert len(inputs) == len(instructions) if instructions is not None else True, "Number of inputs and instructions must be the same if instructions is not None"
+        if sampling_mode == "top_k_sampling":
+            generate_kwargs["do_sample"] = True
+            generate_kwargs["top_k"] = generate_kwargs.get("top_k", 50)
+            generate_kwargs["temperature"] = generate_kwargs.get("temperature", 0.7)
+        elif sampling_mode == "top_p_sampling":
+            generate_kwargs["do_sample"] = True
+            generate_kwargs["top_p"] = 1.0
+            generate_kwargs["temperature"] = generate_kwargs.get("temperature", 0.7)
+        elif sampling_mode is None:
+            # custom sampling_mode by generate_kwargs
+            pass
+        else:
+            raise ValueError(f"Unknown sampling_mode: {sampling_mode}")
+        if "max_new_tokens" not in generate_kwargs:
+            # limits of the generation is the default max_length of the model if max_new_tokes not specified
+            generate_kwargs['max_length'] = generate_kwargs.get("max_length", model_tokenizer.model_max_length)
+        generate_kwargs["num_return_sequences"] = n
+        generate_kwargs["output_scores"] = True
+        generate_kwargs['return_dict_in_generate'] = True
+        
+        sampled_candidates: List[List[str]] = [] # sampled generations for each input [bz, n]
+        for i in range(0, len(inputs), batch_size):
+            bz_start, bz_end = i, min(i+batch_size, len(inputs))
+            bz_inputs = inputs[bz_start:bz_end]
+            if instructions is not None:
+                bz_instructions = instructions[bz_start:bz_end]
+            else:
+                bz_instructions = None
+            bz_inputs = [x + "\n" + y for x, y in zip(bz_instructions, bz_inputs)] if bz_instructions is not None else bz_inputs
+            bz_encodings = model_tokenizer(bz_inputs, return_tensors="pt", padding=True, truncation=True)
+            bz_encodings = {k: v.to(model.device) for k, v in bz_encodings.items()}
+            bz_outputs = model.generate(**bz_encodings, **generate_kwargs)
+            bz_output_ids = bz_outputs.sequences
+            bz_output_scores = torch.stack(bz_outputs.scores, dim=0)
+            if bz_output_ids.shape[1] == bz_encodings['input_ids'].shape[1] + bz_output_scores.shape[0]:
+                # for decoder-only models
+                bz_output_ids = bz_output_ids[:, bz_encodings['input_ids'].shape[1]:]
+            # remove inputs part from outputs
+            bz_outputs = model_tokenizer.batch_decode(bz_output_ids, skip_special_tokens=True)
+            bz_sampled_candidates = [bz_outputs[i: i+n] for i in range(0, len(bz_outputs), n)]
+            sampled_candidates.extend(bz_sampled_candidates)
+        
+        best_of_n_outputs = self.get_best_of_n(inputs, sampled_candidates, instructions=instructions, batch_size=batch_size)
+        return best_of_n_outputs 
     
     def rank_and_fuse(self, inputs:List[str], candidates:List[List[str]], instructions:List[str]=None, return_scores=False, batch_size=4, top_k=3, **generate_kwargs):
         """Rank the candidates using ranker and fuse the top-k candidates with genfuser

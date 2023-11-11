@@ -44,6 +44,6 @@ setup(
         'bitsandbytes',
         'peft',
         'safetensors',
-        'gradio==4.2.0'
+        'gradio'
     ],
 )

@@ -43,6 +43,7 @@ setup(
         'accelerate',
         'bitsandbytes',
         'peft',
-        'safetensors'
+        'safetensors',
+        'gradio==4.2.0'
     ],
 )

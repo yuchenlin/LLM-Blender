@@ -214,6 +214,8 @@ class Blender:
         self,
         conversations_a:List[List[dict]],
         conversations_b:List[List[dict]],
+        batch_size:int=4,
+        return_logits:bool=False,
     ):
         """Compare two conversations by takeing USER turns as inputs and ASSISTANT turns as candidates
             Multi-turn conversations comparison is also supportted.
@@ -234,6 +236,8 @@ class Blender:
         Args:
             conversations_a (List[List[dict]]): List of conversations
             conversations_b (List[List[dict]]): List of conversations
+            batch_size (int, optional): batch size for ranking. Defaults to 4.
+            return_logits (bool, optional): If True, will return logits instead of comparison results as bool. Defaults to False.
         """
         # check role correctness
         for c in conversations_a + conversations_b:
@@ -263,7 +267,7 @@ class Blender:
                 f"<Response {i//2+1}>: " + x[i]['content'] for i in range(1, len(x), 2)
             ]) for x in conversations_b
         ]
-        return self.compare(inputs, cand1_texts, cand2_texts, instructions)
+        return self.compare(inputs, cand1_texts, cand2_texts, instructions, batch_size=batch_size, return_logits=return_logits)
     
     def get_best_of_n(
         self, 

@@ -131,7 +131,7 @@ print(prompts[0])
 print("### best-of-n generations:")
 print(outputs[0])
 ```
-### Use case 3: RLHF 
+### Use case 3: Used as a local Pairwise Evaluator and for better RLHF 
 Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, has exhibitted great correlation with human preferences with an extremly small model size (0.4B), approching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
 
 With a `blender.compare()` function, you can easily apply PairRM to poopular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 

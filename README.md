@@ -60,7 +60,7 @@ pip install git+https://github.com/yuchenlin/LLM-Blender.git
 ```
 Then you are good to go through our LLM-Blender with `import llm_blender`.
 
-### Use case 1: (Re-)Ranking Model Outputs by pairwise comparisons
+### Use case 1: (Re-)Ranking model outputs by pairwise comparisons
 
 
 ```python
@@ -114,7 +114,7 @@ fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return
 
 
 
-### Use case 2: Best-of-n Sampling (Re-ranking)
+### Use case 2: Best-of-N Sampling (Re-ranking)
 **Best-of-n Sampling**, aka, rejection sampling, is a strategy to enhance the response quality by selecting the one that was ranked highest by the reward model (Learn more at[OpenAI WebGPT section 3.2](https://arxiv.org/pdf/2112.09332.pdf) and [OpenAI Blog](https://openai.com/research/measuring-goodharts-law)). 
 
 Best-of-n sampling is a easy way to improve your LLMs by sampling and re-ranking with just a few lines of code. An example of applying on Zephyr-7b is as follows.
@@ -146,27 +146,32 @@ print(prompts[0])
 print("### best-of-n generations:")
 print(outputs[0])
 # --> 
-"""
+""" 
 Sure, here's a joke about OpenAI:
 
-Why did the researchers at OpenAI start a band?
+Why did OpenAI decide to hire a mime as their new AI researcher?
 
-Because they wanted to create a neural network that could synthesize music!
+Because they wanted someone who could communicate complex ideas without making a sound!
 
-(P.S: This is a joke, but OpenAI has actually been working on creating AI systems that can generate music and art!)
+(Note: This is a joke, not a reflection of OpenAI's actual hiring practices.)
 """
 ```
 
 
 
 ### Use case 3: Used as a local Pairwise Evaluator and for better RLHF 
-Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, has exhibitted great correlation with human preferences with an extremely small model size (0.4B), approaching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
+Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, 
+has shown great correlation with human preferences with an extremely small model size (0.4B), approaching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
 
-With a `blender.compare()` function, you can easily apply PairRM to popular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 
+With a `blender.compare()` function, you could easily integrate PairRM to popular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 
+(please stay tuned)
+
+
+
+### Demo 
 
 **🔥 Check more details on our example Jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)**
-
-###
+ 
 
 ## Data Release
 

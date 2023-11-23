@@ -216,6 +216,7 @@ class Blender:
         conversations_b:List[List[dict]],
         batch_size:int=4,
         return_logits:bool=False,
+        mode:str="[A,B]+[B,A]"
     ):
         """Compare two conversations by takeing USER turns as inputs and ASSISTANT turns as candidates
             Multi-turn conversations comparison is also supportted.
@@ -238,6 +239,18 @@ class Blender:
             conversations_b (List[List[dict]]): List of conversations
             batch_size (int, optional): batch size for ranking. Defaults to 4.
             return_logits (bool, optional): If True, will return logits instead of comparison results as bool. Defaults to False.
+            mode: Control the compare mode, mianly deal with the effects of position bias if the model is pairwise scoring model.
+                For typical reward models that do individual scoring, this mode makes no difference.
+                - "[A,B]": 
+                    concat A (left) and B (right) as the input. 
+                - "[B,A]"
+                    concat B (left) and A (right) as the input.
+                - "[A,B]+[B,A]": 
+                    1. concat A (left) and B (right) as the input for the first-time scoring.
+                    2. concat B (left) and A (right) as the input for the second-time scoring.
+                    3. The comparison result is the average of the two scoring results.
+                    The comparison result is always consistent with the order of candidates
+                "[A,B]+[B,A]" is recommended for pairwise scoring models.
         """
         # check role correctness
         for c in conversations_a + conversations_b:
@@ -267,13 +280,15 @@ class Blender:
                 f"<Response {i//2+1}>: " + x[i]['content'] for i in range(1, len(x), 2)
             ]) for x in conversations_b
         ]
-        return self.compare(inputs, cand1_texts, cand2_texts, instructions, batch_size=batch_size, return_logits=return_logits)
+        return self.compare(inputs, cand1_texts, cand2_texts, instructions, batch_size=batch_size, return_logits=return_logits, mode=mode)
     
     def get_best_of_n(
         self, 
         inputs:List[str], 
         candidates:List[List[str]], 
-        instructions:List[str]=None, 
+        instructions:List[str]=None,
+        pairrm_cmp_type:str="bubble",
+        return_all:bool=False,
         batch_size:int=8,
     ):
         """Get the best of n candidates for each input using the ranker
@@ -281,28 +296,52 @@ class Blender:
             inputs List[str]: List of input texts
             candidates List[List[str]]: List of list of candidate texts, meaning each input can have multiple candidates
             instructions List[str]: List of instructions. if not None, will be prepended to the corresponding input
+            pairrm_cmp_type str: one of ['bubble', 'full']
+                - 'bubble': use a single run of bubble sort to get the best of n for quicker speed. Time complexity: O(n)
+                - 'full': use full pairwise comparison matrix to get the best of n. Time complexity: O(n^2)
+            return_all bool: 
+                If True, will return all candidates instead of the best of n candidates
+                The returned candidates will be sorted by the ranker, where the first candidate is the best
             batch_size int: batch size for ranking
         Returns:
-            best_candidates List[str]: Best candidates against the ranker for each input
+            best_candidates
+                - List[str]: Best candidates against the ranker for each input
+                - List[List[str]]: All candidates against the ranker for each input, when return_all is True
         """
-        if self.ranker_config.ranker_type == "pairranker":
+        if self.ranker_config.ranker_type == "pairranker" and pairrm_cmp_type == "bubble":
             # use bubble sort single run to get the best of n for quicker speed
             collate_fn = copy.copy(self.ranker_collator)
             dataset = RankerDataset(inputs, candidates, instructions=instructions)
             dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
             best_idxs = []
+            rest_idxs = []
             with torch.no_grad():
                 for batch in tqdm(iter(dataloader), desc="Ranking candidates"):
                     batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
                     outputs = self.ranker._bubble_predict(**batch)
-                    best_idx = outputs['select_process'][:, 2, -1]
-                    best_idxs.append(best_idx.detach().cpu().numpy())
+                    select_process = outputs['select_process'].detach().cpu().numpy()
+                    best_idx = select_process[:, 2, -1]
+                    rest_idx = np.where(
+                        select_process[:, 0, :] == select_process[:, 2, :], 
+                        select_process[:, 1, :],
+                        select_process[:, 0, :]
+                    )
+                    rest_idxs.append(rest_idx)
+                    best_idxs.append(best_idx)
             best_idxs = np.concatenate(best_idxs, axis=0)
-            best_candidates = np.array(candidates)[np.arange(len(candidates)), best_idxs].tolist()
+            if not return_all:
+                best_candidates = np.array(candidates)[np.arange(len(candidates)), best_idxs].tolist()
+            else:
+                rest_idxs = np.concatenate(rest_idxs, axis=0)
+                all_idxes = np.concatenate([best_idxs.reshape(-1, 1), rest_idxs], axis=1)
+                best_candidates = []
+                for i in range(len(candidates)):
+                    best_candidates.append([candidates[i][x] for x in all_idxes[i]])
         else:
             ranks = self.rank(inputs, candidates, instructions=instructions, batch_size=batch_size)
             best_candidates = get_topk_candidates_from_ranks(ranks, candidates, top_k=1)
-            best_candidates = [x[0] for x in best_candidates]
+            if not return_all:
+                best_candidates = [x[0] for x in best_candidates]
         return best_candidates
             
     
@@ -438,6 +477,8 @@ class Blender:
         n:int=5,
         sampling_mode:str="top_p_sampling",
         batch_size:int=4,
+        pairrm_cmp_type:str="bubble",
+        return_all:bool=False,
         **generate_kwargs
     ):
         """Decoding enhance generate. 
@@ -461,6 +502,12 @@ class Blender:
                 if None, will use custom sampling strategy by generate_kwargs
             batch_size int: 
                 batch size for generation
+            pairrm_cmp_type str: one of ['bubble', 'full']
+                - 'bubble': use a single run of bubble sort to get the best of n for quicker speed. Time complexity: O(n)
+                - 'full': use full pairwise comparison matrix to get the best of n. Time complexity: O(n^2)
+            return_all bool: 
+                If True, will return all candidates instead of the best of n candidates
+                The returned candidates will be sorted by the ranker, where the first candidate is the best
             generate_kwargs: 
                 kwargs for model.generate()
                 recommended kwargs:
@@ -471,7 +518,9 @@ class Blender:
                 Note that num_return_sequences will be set to n, so you don't need to specify it
                     
         Returns:
-            best_of_n_outputs List[str]: List of best-of-n generations for each input
+            best_candidates
+                - List[str]: Best candidates against the ranker for each input
+                - List[List[str]]: All candidates against the ranker for each input, when return_all is True
         """
         assert len(inputs) == len(instructions) if instructions is not None else True, "Number of inputs and instructions must be the same if instructions is not None"
         if sampling_mode == "top_k_sampling":
@@ -516,7 +565,9 @@ class Blender:
             bz_sampled_candidates = [bz_outputs[i: i+n] for i in range(0, len(bz_outputs), n)]
             sampled_candidates.extend(bz_sampled_candidates)
         
-        best_of_n_outputs = self.get_best_of_n(inputs, sampled_candidates, instructions=instructions, batch_size=batch_size)
+        best_of_n_outputs = self.get_best_of_n(inputs, sampled_candidates, 
+            instructions=instructions, batch_size=batch_size,
+            pairrm_cmp_type=pairrm_cmp_type, return_all=return_all)
         return best_of_n_outputs 
     
     def rank_and_fuse(self, inputs:List[str], candidates:List[List[str]], instructions:List[str]=None, return_scores=False, batch_size=4, top_k=3, **generate_kwargs):

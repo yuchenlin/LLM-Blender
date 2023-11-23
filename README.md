@@ -106,11 +106,9 @@ from llm_blender.blender.blender_utils import get_topk_candidates_from_ranks
 topk_candidates = get_topk_candidates_from_ranks(ranks, candidates_texts, top_k=3)
 fuse_generations = blender.fuse(inputs, topk_candidates, batch_size=2)
 # fuse_generations are the fused generations from our fine-tuned checkpoint
-```
 
-- You can also do the rank and fusion with a single function
+# You can also do the rank and fusion with a single function
 
-```python
 fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return_scores=False, batch_size=2, top_k=3)
 ```
 

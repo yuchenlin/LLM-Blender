@@ -60,83 +60,114 @@ pip install git+https://github.com/yuchenlin/LLM-Blender.git
 ```
 Then you are good to go through our LLM-Blender with `import llm_blender`.
 
-### Use case 1: Rank and Fusion (LLM-Blender)
+### Use case 1: (Re-)Ranking Model Outputs by pairwise comparisons
 
 
 ```python
 import llm_blender
 blender = llm_blender.Blender()
 blender.loadranker("llm-blender/pair-ranker") # load ranker checkpoint
-blender.loadfuser("llm-blender/gen_fuser_3b") # load fuser checkpoint if you want to use pre-trained fuser; or you can use ranker only
 ```
 
 - Then you can rank with the following function
 
 ```python
-inputs = ["input1", "input2"]
-candidates_texts = [["candidate1 for input1", "candidatefor input1"], ["candidate1 for input2", "candidate2 for input2"]]
+inputs = ["hello!", "I love you!"]
+candidates_texts = [["get out!", "hi! nice to meet you!", "bye"], 
+                    ["I love you too!", "I hate you!", "Thanks! You're a good guy!"]]
 ranks = blender.rank(inputs, candidates_texts, return_scores=False, batch_size=2)
 # ranks is a list of ranks where ranks[i][j] represents the ranks of candidate-j for input-i
+"""
+ranks -->
+array([[3, 1, 2], # it means "hi! nice to meet you!" ranks the 1st, "bye" ranks the 2nd, and "get out!" ranks the 3rd. 
+       [1, 3, 2]], # it means "I love you too"! ranks the the 1st, and "I hate you!" ranks the 3rd.
+       dtype=int32) 
+
+"""
 ```
 
-- You can fuse the top-ranked candidates with the following code
+
+- Using llm-blender to directly compare two candidates
 
 ```python
+inputs = ["hello!", "I love you!"]
+candidates_A = ["hi!", "I hate you!"]
+candidates_B = ["f**k off!", "I love you, too!"]
+comparison_results = blender.compare(inputs, candidates_A, candidates_B)
+# comparison_results is a list of bool, where comparison_results[i] denotes whether candidates_A[i] is better than candidates_B[i] for inputs[i]
+# comparison_results[0]--> True 
+```
+
+- You can also fuse the top-ranked candidates with the following code
+
+```python
+blender.loadfuser("llm-blender/gen_fuser_3b") # load fuser checkpoint if you want to use pre-trained fuser; or you can use ranker only
 from llm_blender.blender.blender_utils import get_topk_candidates_from_ranks
 topk_candidates = get_topk_candidates_from_ranks(ranks, candidates_texts, top_k=3)
 fuse_generations = blender.fuse(inputs, topk_candidates, batch_size=2)
 # fuse_generations are the fused generations from our fine-tuned checkpoint
-```
 
-- You can also do the rank and fusion as a whole
+# You can also do the rank and fusion with a single function
 
-```python
 fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return_scores=False, batch_size=2, top_k=3)
 ```
 
-- Using llm-blender to directly compare two candidates
-```python
-candidates_A = [cands[0] for cands in candidates]
-candidates_B = [cands[1] for cands in candidates]
-comparison_results = blender.compare(inputs, candidates_A, candidates_B)
-# comparison_results is a list of bool, where element[i] denotes whether candidates_A[i] is better than candidates_B[i] for inputs[i]
-```
 
-### Use case 2: Best-of-n Sampling (Decoding Enhancing)
+
+### Use case 2: Best-of-n Sampling (Re-ranking)
 **Best-of-n Sampling**, aka, rejection sampling, is a strategy to enhance the response quality by selecting the one that was ranked highest by the reward model (Learn more at[OpenAI WebGPT section 3.2](https://arxiv.org/pdf/2112.09332.pdf) and [OpenAI Blog](https://openai.com/research/measuring-goodharts-law)). 
 
-Best-of-n sampling is a easy way to imporve your llm power with just a few lines of code. An example of applying on zephyr is as follows.
+Best-of-n sampling is a easy way to improve your LLMs by sampling and re-ranking with just a few lines of code. An example of applying on Zephyr-7b is as follows.
 
 ```python
+import llm_blender
 from transformers import AutoTokenizer, AutoModelForCausalLM
+
+
+blender = llm_blender.Blender()
+blender.loadranker("llm-blender/pair-ranker") # load ranker checkpoint
 
 tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
 model = AutoModelForCausalLM.from_pretrained("HuggingFaceH4/zephyr-7b-beta", device_map="auto")
+system_message = {"role": "system", "content": "You are a friendly chatbot."}
 
-system_message = {
-    "role": "system",
-    "content": "You are a friendly chatbot who always responds in the style of a pirate",
-}
-messages = [
-    [   
-        system_message,
-        {"role": "user", "content": _inst + "\n" + _input},
-    ]
-    for _inst, _input in zip(insts, inputs)
-]
+inputs = ["can you tell me a joke about OpenAI?"]
+messages = [[system_message, {"role": "user", "content": _input}] for _input in inputs]
 prompts = [tokenizer.apply_chat_template(m, tokenize=False, add_generation_prompt=True) for m in messages]
+
+# standard sampling generation 
+input_ids = tokenizer(prompts[0], return_tensors="pt").input_ids
+sampled_outputs = model.generate(input_ids, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
+print(tokenizer.decode(sampled_outputs[0][len(input_ids[0]):], skip_special_tokens=False))
+# --> `Sure` 
+
+# using our PairRM for best-of-n sampling
 outputs = blender.best_of_n_generate(model, tokenizer, prompts, n=10)
+
 print("### Prompt:")
 print(prompts[0])
 print("### best-of-n generations:")
 print(outputs[0])
+# --> 
+"""
+Sure, here's a joke about OpenAI:
+
+Why did the researchers at OpenAI start a band?
+
+Because they wanted to create a neural network that could synthesize music!
+
+(P.S: This is a joke, but OpenAI has actually been working on creating AI systems that can generate music and art!)
+"""
 ```
-### Use case 3: RLHF 
-Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, has exhibitted great correlation with human preferences with an extremly small model size (0.4B), approching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
 
-With a `blender.compare()` function, you can easily apply PairRM to poopular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 
 
-**🔥 Check more details on our example jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)**
+
+### Use case 3: Used as a local Pairwise Evaluator and for better RLHF 
+Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, has exhibitted great correlation with human preferences with an extremely small model size (0.4B), approaching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
+
+With a `blender.compare()` function, you can easily apply PairRM to popular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 
+
+**🔥 Check more details on our example Jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)**
 
 ###
 
@@ -145,7 +176,7 @@ With a `blender.compare()` function, you can easily apply PairRM to poopular RLH
 - To facilitate large-scale evaluation, we introduce a benchmark dataset, **MixInstruct**, which is a mixture of multiple instruction datasets featuring oracle pairwise comparisons for testing purposes. 
 - MixInstruct is the first large-scale dataset consisting of responses from 11 popular open-source LLMs on the instruction-following dataset. Each split of train/val/test contains 100k/5k/5k examples. 
 - MixInstruct instruct is collected from 4 famous instruction dataset: Alpaca-GPT4, Dolly-15k, GPT4All-LAION and ShareGPT. The ground-truth outputs comes from either ChatGPT, GPT-4 or human annotations.
-- MixInstruct is evaluated by both auto-metrics including BLEURT, BARTScore, BERTScore, etc. and ChatGPT. We provide 4771 examples on test split that is evaluated by ChatGPT through pariwise comparison.
+- MixInstruct is evaluated by both auto-metrics including BLEURT, BARTScore, BERTScore, etc. and ChatGPT. We provide 4771 examples on test split that is evaluated by ChatGPT through pairwise comparison.
 - Code to construct the dataset: [`get_mixinstruct.py`](./llm_blender/download_dataset/get_mixinstruct.py)
 - HuggingFace 🤗 [Dataset link](https://huggingface.co/datasets/llm-blender/mix-instruct)
 

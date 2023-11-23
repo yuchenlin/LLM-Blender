@@ -29,7 +29,7 @@
 - [11/10] Glad to announce that our pairwise reward-model, 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), has released. It's trained on high-quality and large-scale human reference dataset and approaches GPT-4's alignment with human preference with a extremly small model size (0.4B).
 - [10/28] We release a newly trained PairRanker used for reward model at 🤗 [llm-blender/pair-reward-model](https://huggingface.co/llm-blender/pair-reward-model)
 
-- [10/24] Pre-trained PairRanker is able to be loaded directly from 🤗 Hugging face Models [llm-blender/pair-ranker](https://huggingface.co/llm-blender/pair-ranker) within 3 lines of code. See Guidance for [Rank & Fusion](#rank-and-fusion) for details.
+- [10/24] Pre-trained PairRanker is able to be loaded directly from 🤗 Hugging face Models [llm-blender/PairRM](https://huggingface.co/llm-blender/PairRM) within 3 lines of code. See Guidance for [Rank & Fusion](#rank-and-fusion) for details.
 
 ## Overview
 
@@ -66,7 +66,7 @@ Then you are good to go through our LLM-Blender with `import llm_blender`.
 ```python
 import llm_blender
 blender = llm_blender.Blender()
-blender.loadranker("llm-blender/pair-ranker") # load ranker checkpoint
+blender.loadranker("llm-blender/PairRM") # load ranker checkpoint
 ```
 
 - Then you can rank with the following function
@@ -122,11 +122,6 @@ Best-of-n sampling is a easy way to improve your LLMs by sampling and re-ranking
 ```python
 import llm_blender
 from transformers import AutoTokenizer, AutoModelForCausalLM
-
-
-blender = llm_blender.Blender()
-blender.loadranker("llm-blender/pair-ranker") # load ranker checkpoint
-
 tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
 model = AutoModelForCausalLM.from_pretrained("HuggingFaceH4/zephyr-7b-beta", device_map="auto")
 system_message = {"role": "system", "content": "You are a friendly chatbot."}
@@ -142,6 +137,8 @@ print(tokenizer.decode(sampled_outputs[0][len(input_ids[0]):], skip_special_toke
 # --> `Sure` 
 
 # using our PairRM for best-of-n sampling
+blender = llm_blender.Blender()
+blender.loadranker("llm-blender/PairRM") # load ranker checkpoint
 outputs = blender.best_of_n_generate(model, tokenizer, prompts, n=10)
 
 print("### Prompt:")
@@ -252,7 +249,7 @@ do_inference=True
 
 **Model checkpoints**
 
-- 🤗[PairRanker checkpoint](https://huggingface.co/llm-blender/pair-ranker) fine-tuned on DeBERTa-v3-Large (304m)
+- 🤗[PairRanker checkpoint](https://huggingface.co/llm-blender/PairRM) fine-tuned on DeBERTa-v3-Large (304m)
 
 - 🤗[GenFuser checkpoint](https://huggingface.co/llm-blender/gen_fuser_3b) fine-tuned on Flan-T5-XL (3b)
 

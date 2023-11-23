@@ -73,7 +73,8 @@ blender.loadranker("llm-blender/pair-ranker") # load ranker checkpoint
 
 ```python
 inputs = ["hello!", "I love you!"]
-candidates_texts = [["get out!", "hi! nice to meet you!", "bye"], ["I love you too!", "I hate you!", "Thanks! You're a good guy!"]]
+candidates_texts = [["get out!", "hi! nice to meet you!", "bye"], 
+                    ["I love you too!", "I hate you!", "Thanks! You're a good guy!"]]
 ranks = blender.rank(inputs, candidates_texts, return_scores=False, batch_size=2)
 # ranks is a list of ranks where ranks[i][j] represents the ranks of candidate-j for input-i
 """

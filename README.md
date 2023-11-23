@@ -60,46 +60,59 @@ pip install git+https://github.com/yuchenlin/LLM-Blender.git
 ```
 Then you are good to go through our LLM-Blender with `import llm_blender`.
 
-### Use case 1: Rank and Fusion (LLM-Blender)
+### Use case 1: (Re-)Ranking Model Outputs by pairwise comparisons
 
 
 ```python
 import llm_blender
 blender = llm_blender.Blender()
 blender.loadranker("llm-blender/pair-ranker") # load ranker checkpoint
-blender.loadfuser("llm-blender/gen_fuser_3b") # load fuser checkpoint if you want to use pre-trained fuser; or you can use ranker only
 ```
 
 - Then you can rank with the following function
 
 ```python
-inputs = ["input1", "input2"]
-candidates_texts = [["candidate1 for input1", "candidatefor input1"], ["candidate1 for input2", "candidate2 for input2"]]
+inputs = ["hello!", "I love you!"]
+candidates_texts = [["get out!", "hi! nice to meet you!", "bye"], ["I love you too!", "I hate you!", "Thanks! You're a good guy!"]]
 ranks = blender.rank(inputs, candidates_texts, return_scores=False, batch_size=2)
 # ranks is a list of ranks where ranks[i][j] represents the ranks of candidate-j for input-i
+"""
+ranks -->
+array([[3, 1, 2], # it means "hi! nice to meet you!" ranks the 1st, "bye" ranks the 2nd, and "get out!" ranks the 3rd. 
+       [1, 3, 2]], # it means "I love you too"! ranks the the 1st, and "I hate you!" ranks the 3rd.
+       dtype=int32) 
+
+"""
 ```
 
-- You can fuse the top-ranked candidates with the following code
+
+- Using llm-blender to directly compare two candidates
 
 ```python
+inputs = ["hello!", "I love you!"]
+candidates_A = ["hi!", "I hate you!"]
+candidates_B = ["f**k off!", "I love you, too!"]
+comparison_results = blender.compare(inputs, candidates_A, candidates_B)
+# comparison_results is a list of bool, where comparison_results[i] denotes whether candidates_A[i] is better than candidates_B[i] for inputs[i]
+# comparison_results[0]--> True 
+```
+
+- You can also fuse the top-ranked candidates with the following code
+
+```python
+blender.loadfuser("llm-blender/gen_fuser_3b") # load fuser checkpoint if you want to use pre-trained fuser; or you can use ranker only
 from llm_blender.blender.blender_utils import get_topk_candidates_from_ranks
 topk_candidates = get_topk_candidates_from_ranks(ranks, candidates_texts, top_k=3)
 fuse_generations = blender.fuse(inputs, topk_candidates, batch_size=2)
 # fuse_generations are the fused generations from our fine-tuned checkpoint
 ```
 
-- You can also do the rank and fusion as a whole
+- You can also do the rank and fusion with a single function
 
 ```python
 fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return_scores=False, batch_size=2, top_k=3)
 ```
 
-- Using llm-blender to directly compare two candidates
-```python
-candidates_A = [cands[0] for cands in candidates]
-candidates_B = [cands[1] for cands in candidates]
-comparison_results = blender.compare(inputs, candidates_A, candidates_B)
-# comparison_results is a list of bool, where element[i] denotes whether candidates_A[i] is better than candidates_B[i] for inputs[i]
 ```
 
 ### Use case 2: Best-of-n Sampling (Decoding Enhancing)

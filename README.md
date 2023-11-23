@@ -114,41 +114,60 @@ fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return
 
 
 
-### Use case 2: Best-of-n Sampling (Decoding Enhancing)
+### Use case 2: Best-of-n Sampling (Re-ranking)
 **Best-of-n Sampling**, aka, rejection sampling, is a strategy to enhance the response quality by selecting the one that was ranked highest by the reward model (Learn more at[OpenAI WebGPT section 3.2](https://arxiv.org/pdf/2112.09332.pdf) and [OpenAI Blog](https://openai.com/research/measuring-goodharts-law)). 
 
-Best-of-n sampling is a easy way to imporve your llm power with just a few lines of code. An example of applying on zephyr is as follows.
+Best-of-n sampling is a easy way to improve your LLMs by sampling and re-ranking with just a few lines of code. An example of applying on Zephyr-7b is as follows.
 
 ```python
+import llm_blender
 from transformers import AutoTokenizer, AutoModelForCausalLM
+
+
+blender = llm_blender.Blender()
+blender.loadranker("llm-blender/pair-ranker") # load ranker checkpoint
 
 tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
 model = AutoModelForCausalLM.from_pretrained("HuggingFaceH4/zephyr-7b-beta", device_map="auto")
+system_message = {"role": "system", "content": "You are a friendly chatbot."}
 
-system_message = {
-    "role": "system",
-    "content": "You are a friendly chatbot who always responds in the style of a pirate",
-}
-messages = [
-    [   
-        system_message,
-        {"role": "user", "content": _inst + "\n" + _input},
-    ]
-    for _inst, _input in zip(insts, inputs)
-]
+inputs = ["can you tell me a joke about OpenAI?"]
+messages = [[system_message, {"role": "user", "content": _input}] for _input in inputs]
 prompts = [tokenizer.apply_chat_template(m, tokenize=False, add_generation_prompt=True) for m in messages]
+
+# standard sampling generation 
+input_ids = tokenizer(prompts[0], return_tensors="pt").input_ids
+sampled_outputs = model.generate(input_ids, do_sample=True, top_k=50, top_p=0.95, num_return_sequences=1)
+print(tokenizer.decode(sampled_outputs[0][len(input_ids[0]):], skip_special_tokens=False))
+# --> `Sure` 
+
+# using our PairRM for best-of-n sampling
 outputs = blender.best_of_n_generate(model, tokenizer, prompts, n=10)
+
 print("### Prompt:")
 print(prompts[0])
 print("### best-of-n generations:")
 print(outputs[0])
+# --> 
+"""
+Sure, here's a joke about OpenAI:
+
+Why did the researchers at OpenAI start a band?
+
+Because they wanted to create a neural network that could synthesize music!
+
+(P.S: This is a joke, but OpenAI has actually been working on creating AI systems that can generate music and art!)
+"""
 ```
+
+
+
 ### Use case 3: Used as a local Pairwise Evaluator and for better RLHF 
-Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, has exhibitted great correlation with human preferences with an extremly small model size (0.4B), approching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
+Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, has exhibitted great correlation with human preferences with an extremely small model size (0.4B), approaching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
 
-With a `blender.compare()` function, you can easily apply PairRM to poopular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 
+With a `blender.compare()` function, you can easily apply PairRM to popular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 
 
-**🔥 Check more details on our example jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)**
+**🔥 Check more details on our example Jupyter notebook usage: [`blender_usage.ipynb`](./blender_usage.ipynb)**
 
 ###
 
@@ -157,7 +176,7 @@ With a `blender.compare()` function, you can easily apply PairRM to poopular RLH
 - To facilitate large-scale evaluation, we introduce a benchmark dataset, **MixInstruct**, which is a mixture of multiple instruction datasets featuring oracle pairwise comparisons for testing purposes. 
 - MixInstruct is the first large-scale dataset consisting of responses from 11 popular open-source LLMs on the instruction-following dataset. Each split of train/val/test contains 100k/5k/5k examples. 
 - MixInstruct instruct is collected from 4 famous instruction dataset: Alpaca-GPT4, Dolly-15k, GPT4All-LAION and ShareGPT. The ground-truth outputs comes from either ChatGPT, GPT-4 or human annotations.
-- MixInstruct is evaluated by both auto-metrics including BLEURT, BARTScore, BERTScore, etc. and ChatGPT. We provide 4771 examples on test split that is evaluated by ChatGPT through pariwise comparison.
+- MixInstruct is evaluated by both auto-metrics including BLEURT, BARTScore, BERTScore, etc. and ChatGPT. We provide 4771 examples on test split that is evaluated by ChatGPT through pairwise comparison.
 - Code to construct the dataset: [`get_mixinstruct.py`](./llm_blender/download_dataset/get_mixinstruct.py)
 - HuggingFace 🤗 [Dataset link](https://huggingface.co/datasets/llm-blender/mix-instruct)
 

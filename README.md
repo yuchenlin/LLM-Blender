@@ -114,7 +114,7 @@ fuse_generations = blender.fuse(inputs, topk_candidates, batch_size=2)
 fuse_generations, ranks = blender.rank_and_fuse(inputs, candidates_texts, return_scores=False, batch_size=2, top_k=3)
 ```
 
-```
+
 
 ### Use case 2: Best-of-n Sampling (Decoding Enhancing)
 **Best-of-n Sampling**, aka, rejection sampling, is a strategy to enhance the response quality by selecting the one that was ranked highest by the reward model (Learn more at[OpenAI WebGPT section 3.2](https://arxiv.org/pdf/2112.09332.pdf) and [OpenAI Blog](https://openai.com/research/measuring-goodharts-law)). 

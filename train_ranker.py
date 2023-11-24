@@ -84,13 +84,13 @@ def main(args):
         args.n_tasks = predict_dataset.n_tasks
 
     # set up model
-    config = RankerConfig()
-    for k in args.__dict__:
-        if k in config.__dict__:
-            print(k, getattr(args, k))
-            setattr(config, k, getattr(args, k))
+    
     if args.load_checkpoint:
-        # config = torch.load(os.path.join(args.load_checkpoint, "config.bin"))
+        config = RankerConfig.from_json_file(os.path.join(args.load_checkpoint, "config.json"))
+        for k in args.__dict__:
+            if k in config.__dict__:
+                print(k, getattr(args, k))
+                setattr(config, k, getattr(args, k))
         model = build_ranker(
             args.ranker_type,
             args.model_type,
@@ -106,6 +106,7 @@ def main(args):
         else:
             logging.info(f"Successfully loaded checkpoint from '{args.load_checkpoint}'")
     else:
+        config = RankerConfig()
         model = build_ranker(
             args.ranker_type,
             args.model_type,
@@ -201,7 +202,6 @@ def main(args):
             logging.info("Saving model")
             best_checkpoint_folder = os.path.join(args.output_dir, "checkpoint-best")
             trainer.save_model(best_checkpoint_folder)
-            torch.save(model.args, os.path.join(best_checkpoint_folder, "config.bin"))
 
     if args.do_predict:
         logging.info("Start predicting")

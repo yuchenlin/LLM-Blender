@@ -28,8 +28,8 @@ class RerankerTrainer(Trainer):
         if self.is_world_process_zero():
             super().save_model(output_dir, **kwargs)
             model = self.model.module if hasattr(self.model, "module") else self.model
-            json.dump(asdict(model.args), open(os.path.join(output_dir, "ranker_config.json"), "w"), indent=4)
-
+            json.dump(asdict(model.args), open(os.path.join(output_dir, "config.json"), "w"), indent=4)
+            
 class FiDTrainer(Seq2SeqTrainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         """

@@ -4,6 +4,8 @@ import numpy as np
 import copy
 import json
 import os
+import importlib
+import transformers
 from typing import List, Union
 from pathlib import Path
 from .blender_utils import (
@@ -25,6 +27,14 @@ from .config import BlenderConfig
 from huggingface_hub import snapshot_download
 from transformers.utils.hub import TRANSFORMERS_CACHE
 from tqdm import tqdm
+
+# detect if vllm is installed
+try:
+    importlib.import_module("vllm")
+    import vllm
+    is_vllm_imported = True
+except ImportError:
+    is_vllm_imported = False
 
 
 class Blender:
@@ -308,6 +318,13 @@ class Blender:
                 - List[str]: Best candidates against the ranker for each input
                 - List[List[str]]: All candidates against the ranker for each input, when return_all is True
         """
+        if all([len(c) == 1 for c in candidates]):
+            # no need to rank
+            if not return_all:
+                best_candidates = [x[0] for x in candidates]
+            else:
+                best_candidates = candidates
+            return best_candidates
         if self.ranker_config.ranker_type == "pairranker" and pairrm_cmp_type == "bubble":
             # use bubble sort single run to get the best of n for quicker speed
             collate_fn = copy.copy(self.ranker_collator)
@@ -472,16 +489,16 @@ class Blender:
 
     def best_of_n_generate(
         self,
-        model,
-        model_tokenizer,
-        inputs,
+        model:Union[transformers.PreTrainedModel, vllm.LLM], # Union[transformers.PreTrainedModel, vllm.LLM
+        model_tokenizer:transformers.PreTrainedTokenizer,
+        inputs:List[str],
         instructions:List[str]=None,
         n:int=5,
         sampling_mode:str="top_p_sampling",
         batch_size:int=4,
         pairrm_cmp_type:str="bubble",
         return_all:bool=False,
-        **generate_kwargs
+        **generate_kwargs:dict,
     ):
         """Decoding enhance generate. 
             In this process, we will generate multiple generations for each input,
@@ -545,30 +562,38 @@ class Blender:
         generate_kwargs["output_scores"] = True
         generate_kwargs['return_dict_in_generate'] = True
         
+        prompts = [x + "\n" + y for x, y in zip(instructions, inputs)] if instructions is not None else inputs
         sampled_candidates: List[List[str]] = [] # sampled generations for each input [bz, n]
-        for i in tqdm(range(0, len(inputs), batch_size), desc="Sampling generations"):
-            bz_start, bz_end = i, min(i+batch_size, len(inputs))
-            bz_inputs = inputs[bz_start:bz_end]
-            if instructions is not None:
-                bz_instructions = instructions[bz_start:bz_end]
-            else:
-                bz_instructions = None
-            bz_inputs = [x + "\n" + y for x, y in zip(bz_instructions, bz_inputs)] if bz_instructions is not None else bz_inputs
-            bz_encodings = model_tokenizer(bz_inputs, return_tensors="pt", padding=True, truncation=True)
-            bz_encodings = {k: v.to(model.device) for k, v in bz_encodings.items()}
-            bz_outputs = model.generate(**bz_encodings, **generate_kwargs)
-            bz_output_ids = bz_outputs.sequences
-            bz_output_scores = torch.stack(bz_outputs.scores, dim=0)
-            if bz_output_ids.shape[1] == bz_encodings['input_ids'].shape[1] + bz_output_scores.shape[0]:
-                # for decoder-only models
-                bz_output_ids = bz_output_ids[:, bz_encodings['input_ids'].shape[1]:]
-            # remove inputs part from outputs
-            bz_outputs = model_tokenizer.batch_decode(bz_output_ids, skip_special_tokens=True)
-            bz_sampled_candidates = [bz_outputs[i: i+n] for i in range(0, len(bz_outputs), n)]
-            sampled_candidates.extend(bz_sampled_candidates)
+        if is_vllm_imported and isinstance(model, vllm.LLM):
+            sampling_params = vllm.SamplingParams(
+                n=n, max_tokens=generate_kwargs.get("max_tokens", generate_kwargs.get("max_new_tokens", generate_kwargs.get("max_length", model_tokenizer.model_max_length))),
+            )
+            for k, v in generate_kwargs.items():
+                if hasattr(sampling_params, k):
+                    setattr(sampling_params, k, v)
+            outputs = model.generate(prompts, sampling_params=sampling_params)
+            for output in outputs:
+                sampled_candidates.append([output.outputs[i].text for i in range(len(output.outputs))])
+        else:
+            for i in tqdm(range(0, len(prompts), batch_size), desc="Sampling generations"):
+                bz_start, bz_end = i, min(i+batch_size, len(inputs))
+                
+                bz_prompts = prompts[bz_start: bz_end]
+                bz_encodings = model_tokenizer(bz_prompts, return_tensors="pt", padding=True, truncation=True)
+                bz_encodings = {k: v.to(model.device) for k, v in bz_encodings.items()}
+                bz_outputs = model.generate(**bz_encodings, **generate_kwargs)
+                bz_output_ids = bz_outputs.sequences
+                bz_output_scores = torch.stack(bz_outputs.scores, dim=0)
+                if bz_output_ids.shape[1] == bz_encodings['input_ids'].shape[1] + bz_output_scores.shape[0]:
+                    # for decoder-only models
+                    bz_output_ids = bz_output_ids[:, bz_encodings['input_ids'].shape[1]:]
+                # remove inputs part from outputs
+                bz_outputs = model_tokenizer.batch_decode(bz_output_ids, skip_special_tokens=True)
+                bz_sampled_candidates = [bz_outputs[i: i+n] for i in range(0, len(bz_outputs), n)]
+                sampled_candidates.extend(bz_sampled_candidates)
         
-        best_of_n_outputs = self.get_best_of_n(inputs, sampled_candidates, 
-            instructions=instructions, batch_size=batch_size,
+        best_of_n_outputs = self.get_best_of_n(prompts, sampled_candidates, 
+            instructions=instructions, batch_size=min(batch_size, 32),
             pairrm_cmp_type=pairrm_cmp_type, return_all=return_all)
         return best_of_n_outputs 
     

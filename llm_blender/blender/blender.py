@@ -546,7 +546,7 @@ class Blender:
         generate_kwargs['return_dict_in_generate'] = True
         
         sampled_candidates: List[List[str]] = [] # sampled generations for each input [bz, n]
-        for i in range(0, len(inputs), batch_size):
+        for i in tqdm(range(0, len(inputs), batch_size), desc="Sampling generations"):
             bz_start, bz_end = i, min(i+batch_size, len(inputs))
             bz_inputs = inputs[bz_start:bz_end]
             if instructions is not None:

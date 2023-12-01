@@ -489,7 +489,7 @@ class Blender:
 
     def best_of_n_generate(
         self,
-        model:Union[transformers.PreTrainedModel, vllm.LLM], # Union[transformers.PreTrainedModel, vllm.LLM
+        model, # Union[transformers.PreTrainedModel, vllm.LLM]
         model_tokenizer:transformers.PreTrainedTokenizer,
         inputs:List[str],
         instructions:List[str]=None,
@@ -506,7 +506,7 @@ class Blender:
             thus enhancing the quality of generations.
 
         Args:
-            model: 
+            model: Union[transformers.PreTrainedModel, vllm.LLM]
                 Huggingface model that could generate with .generate(**generate_kwargs)
             model_tokenizer: 
                 Huggingface tokenizer that could tokenize with .__call__(**generate_kwargs)

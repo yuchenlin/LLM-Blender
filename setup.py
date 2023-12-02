@@ -36,6 +36,7 @@ setup(
         'accelerate',
         'safetensors',
         'gradio',
+        'openai'
         # 'bitsandbytes',
         # 'openai',
         # 'peft',

@@ -592,7 +592,7 @@ class Blender:
                 bz_sampled_candidates = [bz_outputs[i: i+n] for i in range(0, len(bz_outputs), n)]
                 sampled_candidates.extend(bz_sampled_candidates)
         
-        best_of_n_outputs = self.get_best_of_n(prompts, sampled_candidates, 
+        best_of_n_outputs = self.get_best_of_n(inputs, sampled_candidates, 
             instructions=instructions, batch_size=min(batch_size, 32),
             pairrm_cmp_type=pairrm_cmp_type, return_all=return_all)
         return best_of_n_outputs 

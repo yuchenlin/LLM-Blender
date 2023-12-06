@@ -97,19 +97,22 @@ class Blender:
         """
         cache_dir = kwargs.pop("cache_dir", TRANSFORMERS_CACHE)
         cache_dir = Path(cache_dir)
-        try:
-            # try hugging face hub
-            logging.warning(f"Try dowloading checkpoint from huggingface hub: {ranker_path}")
-            snapshot_download(ranker_path, local_dir=cache_dir / ranker_path)
-            ranker_path = cache_dir / ranker_path
-            logging.warning(f"Successfully downloaded checkpoint to '{ranker_path}'")
-        except Exception as e:
-            # try local path
-            logging.warning(f"Failed to download checkpoint from huggingface hub: {ranker_path}")
-            logging.warning(f"Erorr: {e}")
-            logging.warning(f"Try loading checkpoint from local path: {ranker_path}")
-            if not os.path.exists(ranker_path):
-                raise ValueError(f"Checkpoint '{ranker_path}' does not exist")
+        
+        if not os.path.exists(ranker_path):
+            if not os.path.exists(cache_dir / ranker_path):
+                logging.warning(f"Checkpoint '{ranker_path}' does not exist")
+                try:
+                    # try hugging face hub
+                    logging.warning(f"Try dowloading checkpoint from huggingface hub: {ranker_path}")
+                    snapshot_download(ranker_path, local_dir=cache_dir / ranker_path)
+                    ranker_path = cache_dir / ranker_path
+                    logging.warning(f"Successfully downloaded checkpoint to '{ranker_path}'")
+                except Exception as e:
+                    # try local path
+                    logging.warning(f"Failed to download checkpoint from huggingface hub: {ranker_path}")
+                    logging.warning(f"Erorr: {e}")
+            else:
+                ranker_path = cache_dir / ranker_path
         
         # load ranker config from ranker_path
         ranker_path = Path(ranker_path)
@@ -145,6 +148,7 @@ class Blender:
             self.ranker = self.ranker.float()
         self.ranker = self.ranker.to(device)
         self.ranker.eval()
+        print("Successfully loaded ranker from ", ranker_path)
         
     def loadfuser(self, fuser_path:str, device:str=None, **kwargs):
         """Load fuser from a path

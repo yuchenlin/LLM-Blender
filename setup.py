@@ -9,7 +9,7 @@ setup(
     packages=find_packages(),
     url='https://yuchenlin.xyz/LLM-Blender/',
     install_requires=[
-        'transformers',
+        'transformers>=4.31.0',
         'datasets',
         'torch',
         'wget',

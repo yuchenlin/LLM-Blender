@@ -490,6 +490,100 @@ class Blender:
             _generations = self.fuser_tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             generations.extend(_generations)
         return generations
+    
+    def n_generate(
+        self,
+        model, # Union[transformers.PreTrainedModel, vllm.LLM]
+        model_tokenizer:transformers.PreTrainedTokenizer,
+        inputs:List[str],
+        instructions:List[str]=None,
+        n:int=5,
+        sampling_mode:str="top_p_sampling",
+        batch_size:int=4,
+        **generate_kwargs:dict,
+    ):
+        """We will generate n generations for each input,
+
+        Args:
+            model: Union[transformers.PreTrainedModel, vllm.LLM]
+                Huggingface model that could generate with .generate(**generate_kwargs)
+            model_tokenizer: 
+                Huggingface tokenizer that could tokenize with .__call__(**generate_kwargs)
+            inputs List[str]: 
+                List of input texts
+            instructions List[str]: 
+                List of instructions. if not None, will be prepended to the corresponding input
+            n int: 
+                the n parameter in best-of-n. That is, how many samples to generate for ranking for each input
+            sampling_mode: 
+                "top_k_sampling" or "top_p_sampling"
+                if None, will use custom sampling strategy by generate_kwargs
+            batch_size int: 
+                batch size for generation
+            generate_kwargs: 
+                kwargs for model.generate()
+                recommended kwargs:
+                    - max_new_tokens: max length of the generation. If not specified, will use model_tokenizer.model_max_length
+                    - top_k: if mode is "top_k_sampling", will use this top_k. if not specified, will use 50
+                    - top_p: if mode is "top_p_sampling", will use this top_p. if not specified, will use 1.0
+                    - temperature: temperature for sampling. if not specified, will use 0.7
+                Note that num_return_sequences will be set to n, so you don't need to specify it
+                    
+        Returns:
+            sampled_candidates
+                - List[List[str]]: All sampled candidates against the ranker for each input
+        """
+        assert len(inputs) == len(instructions) if instructions is not None else True, "Number of inputs and instructions must be the same if instructions is not None"
+        if sampling_mode == "top_k_sampling":
+            generate_kwargs["do_sample"] = True
+            generate_kwargs["top_k"] = generate_kwargs.get("top_k", 50)
+            generate_kwargs["temperature"] = generate_kwargs.get("temperature", 0.7)
+        elif sampling_mode == "top_p_sampling":
+            generate_kwargs["do_sample"] = True
+            generate_kwargs["top_p"] = 1.0
+            generate_kwargs["temperature"] = generate_kwargs.get("temperature", 0.7)
+        elif sampling_mode is None:
+            # custom sampling_mode by generate_kwargs
+            pass
+        else:
+            raise ValueError(f"Unknown sampling_mode: {sampling_mode}")
+        if "max_new_tokens" not in generate_kwargs:
+            # limits of the generation is the default max_length of the model if max_new_tokes not specified
+            generate_kwargs['max_length'] = generate_kwargs.get("max_length", model_tokenizer.model_max_length)
+        generate_kwargs["num_return_sequences"] = n
+        generate_kwargs["output_scores"] = True
+        generate_kwargs['return_dict_in_generate'] = True
+        
+        prompts = [x + "\n" + y for x, y in zip(instructions, inputs)] if instructions is not None else inputs
+        sampled_candidates: List[List[str]] = [] # sampled generations for each input [bz, n]
+        if is_vllm_imported and isinstance(model, vllm.LLM):
+            sampling_params = vllm.SamplingParams(
+                n=n, max_tokens=generate_kwargs.get("max_tokens", generate_kwargs.get("max_new_tokens", generate_kwargs.get("max_length", model_tokenizer.model_max_length))),
+            )
+            for k, v in generate_kwargs.items():
+                if hasattr(sampling_params, k):
+                    setattr(sampling_params, k, v)
+            outputs = model.generate(prompts, sampling_params=sampling_params)
+            for output in outputs:
+                sampled_candidates.append([output.outputs[i].text for i in range(len(output.outputs))])
+        else:
+            for i in tqdm(range(0, len(prompts), batch_size), desc="Sampling generations"):
+                bz_start, bz_end = i, min(i+batch_size, len(inputs))
+                
+                bz_prompts = prompts[bz_start: bz_end]
+                bz_encodings = model_tokenizer(bz_prompts, return_tensors="pt", padding=True, truncation=True)
+                bz_encodings = {k: v.to(model.device) for k, v in bz_encodings.items()}
+                bz_outputs = model.generate(**bz_encodings, **generate_kwargs)
+                bz_output_ids = bz_outputs.sequences
+                bz_output_scores = torch.stack(bz_outputs.scores, dim=0)
+                if bz_output_ids.shape[1] == bz_encodings['input_ids'].shape[1] + bz_output_scores.shape[0]:
+                    # for decoder-only models
+                    bz_output_ids = bz_output_ids[:, bz_encodings['input_ids'].shape[1]:]
+                # remove inputs part from outputs
+                bz_outputs = model_tokenizer.batch_decode(bz_output_ids, skip_special_tokens=True)
+                bz_sampled_candidates = [bz_outputs[i: i+n] for i in range(0, len(bz_outputs), n)]
+                sampled_candidates.extend(bz_sampled_candidates)
+        return sampled_candidates
 
     def best_of_n_generate(
         self,
@@ -545,56 +639,8 @@ class Blender:
                 - List[str]: Best candidates against the ranker for each input
                 - List[List[str]]: All candidates against the ranker for each input, when return_all is True
         """
-        assert len(inputs) == len(instructions) if instructions is not None else True, "Number of inputs and instructions must be the same if instructions is not None"
-        if sampling_mode == "top_k_sampling":
-            generate_kwargs["do_sample"] = True
-            generate_kwargs["top_k"] = generate_kwargs.get("top_k", 50)
-            generate_kwargs["temperature"] = generate_kwargs.get("temperature", 0.7)
-        elif sampling_mode == "top_p_sampling":
-            generate_kwargs["do_sample"] = True
-            generate_kwargs["top_p"] = 1.0
-            generate_kwargs["temperature"] = generate_kwargs.get("temperature", 0.7)
-        elif sampling_mode is None:
-            # custom sampling_mode by generate_kwargs
-            pass
-        else:
-            raise ValueError(f"Unknown sampling_mode: {sampling_mode}")
-        if "max_new_tokens" not in generate_kwargs:
-            # limits of the generation is the default max_length of the model if max_new_tokes not specified
-            generate_kwargs['max_length'] = generate_kwargs.get("max_length", model_tokenizer.model_max_length)
-        generate_kwargs["num_return_sequences"] = n
-        generate_kwargs["output_scores"] = True
-        generate_kwargs['return_dict_in_generate'] = True
-        
-        prompts = [x + "\n" + y for x, y in zip(instructions, inputs)] if instructions is not None else inputs
-        sampled_candidates: List[List[str]] = [] # sampled generations for each input [bz, n]
-        if is_vllm_imported and isinstance(model, vllm.LLM):
-            sampling_params = vllm.SamplingParams(
-                n=n, max_tokens=generate_kwargs.get("max_tokens", generate_kwargs.get("max_new_tokens", generate_kwargs.get("max_length", model_tokenizer.model_max_length))),
-            )
-            for k, v in generate_kwargs.items():
-                if hasattr(sampling_params, k):
-                    setattr(sampling_params, k, v)
-            outputs = model.generate(prompts, sampling_params=sampling_params)
-            for output in outputs:
-                sampled_candidates.append([output.outputs[i].text for i in range(len(output.outputs))])
-        else:
-            for i in tqdm(range(0, len(prompts), batch_size), desc="Sampling generations"):
-                bz_start, bz_end = i, min(i+batch_size, len(inputs))
-                
-                bz_prompts = prompts[bz_start: bz_end]
-                bz_encodings = model_tokenizer(bz_prompts, return_tensors="pt", padding=True, truncation=True)
-                bz_encodings = {k: v.to(model.device) for k, v in bz_encodings.items()}
-                bz_outputs = model.generate(**bz_encodings, **generate_kwargs)
-                bz_output_ids = bz_outputs.sequences
-                bz_output_scores = torch.stack(bz_outputs.scores, dim=0)
-                if bz_output_ids.shape[1] == bz_encodings['input_ids'].shape[1] + bz_output_scores.shape[0]:
-                    # for decoder-only models
-                    bz_output_ids = bz_output_ids[:, bz_encodings['input_ids'].shape[1]:]
-                # remove inputs part from outputs
-                bz_outputs = model_tokenizer.batch_decode(bz_output_ids, skip_special_tokens=True)
-                bz_sampled_candidates = [bz_outputs[i: i+n] for i in range(0, len(bz_outputs), n)]
-                sampled_candidates.extend(bz_sampled_candidates)
+        sampled_candidates = self.n_generate(model, model_tokenizer, inputs, 
+            instructions=instructions, n=n, sampling_mode=sampling_mode, batch_size=batch_size, **generate_kwargs)
         
         best_of_n_outputs = self.get_best_of_n(inputs, sampled_candidates, 
             instructions=instructions, batch_size=min(batch_size, 32),

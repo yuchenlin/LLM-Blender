@@ -540,7 +540,7 @@ class Blender:
             generate_kwargs["temperature"] = generate_kwargs.get("temperature", 0.7)
         elif sampling_mode == "top_p_sampling":
             generate_kwargs["do_sample"] = True
-            generate_kwargs["top_p"] = 1.0
+            generate_kwargs["top_p"] = generate_kwargs.get("top_p", 1.0)
             generate_kwargs["temperature"] = generate_kwargs.get("temperature", 0.7)
         elif sampling_mode is None:
             # custom sampling_mode by generate_kwargs
@@ -562,6 +562,7 @@ class Blender:
             )
             for k, v in generate_kwargs.items():
                 if hasattr(sampling_params, k):
+                    print("set {} to {}".format(k, v))
                     setattr(sampling_params, k, v)
             outputs = model.generate(prompts, sampling_params=sampling_params)
             for output in outputs:

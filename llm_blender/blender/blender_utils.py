@@ -70,6 +70,7 @@ def load_ranker(ranker_config: RankerConfig):
         ranker_config,
         tokenizer,
     )
+    ranker = ranker.eval()
     if ranker_config.load_checkpoint is not None:
         # load checkpoint from local path
         load_checkpoint = Path(ranker_config.load_checkpoint)

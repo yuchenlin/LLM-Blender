@@ -211,3 +211,95 @@ class GenFuserDataset(torch.utils.data.Dataset):
         batch = {k: v for k, v in batch.items() if v is not None}
         return batch
 
+def tokenize_pair(tokenizer, sources:List[str], candidate1s:List[str], candidate2s:List[str], source_max_length=1224, candidate_max_length=412):
+    ids = []
+    assert len(sources) == len(candidate1s) == len(candidate2s)
+    max_length = source_max_length + 2 * candidate_max_length
+    source_prefix = "<|source|>"
+    cand1_prefix = "<|candidate1|>"
+    cand2_prefix = "<|candidate2|>"
+    for i in range(len(sources)):
+        source_ids = tokenizer.encode(source_prefix + sources[i], max_length=source_max_length, truncation=True)
+        candidate_max_length = (max_length - len(source_ids)) // 2
+        candidate1_ids = tokenizer.encode(cand1_prefix + candidate1s[i], max_length=candidate_max_length, truncation=True)
+        candidate2_ids = tokenizer.encode(cand2_prefix + candidate2s[i], max_length=candidate_max_length, truncation=True)
+        ids.append(source_ids + candidate1_ids + candidate2_ids)
+    encodings = tokenizer.pad({"input_ids": ids}, return_tensors="pt", padding="max_length", max_length=max_length)
+    return encodings
+
+def get_pair_from_conv(convAs: List[str], convBs: List[str]):
+    """Compare two conversations by takeing USER turns as inputs and ASSISTANT turns as candidates
+        Multi-turn conversations comparison is also supportted.
+        a conversation format is:
+        ```python
+        [
+            {
+                "content": "hello",
+                "role": "USER"
+            },
+            {
+                "content": "hi",
+                "role": "ASSISTANT"
+            },
+            ...
+        ]
+        ```
+    Args:
+        convAs (List[List[dict]]): List of conversations
+        convAs (List[List[dict]]): List of conversations
+    """
+    for c in convAs + convBs:
+        assert len(c) % 2 == 0, "Each conversation must have even number of turns"
+        assert all([c[i]['role'] == 'USER' for i in range(0, len(c), 2)]), "Each even turn must be USER"
+        assert all([c[i]['role'] == 'ASSISTANT' for i in range(1, len(c), 2)]), "Each odd turn must be ASSISTANT"
+    # check conversations correctness
+    assert len(convAs) == len(convBs), "Number of conversations must be the same"
+    for c_a, c_b in zip(convAs, convBs):
+        assert len(c_a) == len(c_b), "Number of turns in each conversation must be the same"
+        assert all([c_a[i]['content'] == c_b[i]['content'] for i in range(0, len(c_a), 2)]), "USER turns must be the same"
+    
+    instructions = ["Finish the following coversation in each i-th turn by filling in <Response i> with your response."] * len(convAs)
+    inputs = [
+        "\n".join([
+            "USER: " + x[i]['content'] +
+            f"\nAssistant: <Response {i//2+1}>" for i in range(0, len(x), 2)
+        ]) for x in convAs
+    ]
+    cand1_texts = [
+        "\n".join([
+            f"<Response {i//2+1}>: " + x[i]['content'] for i in range(1, len(x), 2)
+        ]) for x in convAs
+    ]
+    cand2_texts = [
+        "\n".join([
+            f"<Response {i//2+1}>: " + x[i]['content'] for i in range(1, len(x), 2)
+        ]) for x in convBs
+    ]
+    inputs = [inst + inp for inst, inp in zip(instructions, inputs)]
+    return inputs, cand1_texts, cand2_texts
+
+def tokenize_conv_pair(tokenizer, convAs: List[str], convBs: List[str]):
+    """Compare two conversations by takeing USER turns as inputs and ASSISTANT turns as candidates
+        Multi-turn conversations comparison is also supportted.
+        a conversation format is:
+        ```python
+        [
+            {
+                "content": "hello",
+                "role": "USER"
+            },
+            {
+                "content": "hi",
+                "role": "ASSISTANT"
+            },
+            ...
+        ]
+        ```
+    Args:
+        tokenzier (transformers.tokenizer): tokenizer
+        convAs (List[List[dict]]): List of conversations
+        convAs (List[List[dict]]): List of conversations
+    """
+    inputs, cand1_texts, cand2_texts = get_pair_from_conv(convAs, convBs)
+    encodings = tokenize_pair(tokenizer, inputs, cand1_texts, cand2_texts)
+    return encodings

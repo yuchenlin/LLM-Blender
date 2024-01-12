@@ -116,7 +116,7 @@ class Blender:
         
         # load ranker config from ranker_path
         ranker_path = Path(ranker_path)
-        if not os.path.exists(ranker_path / "ranker_config.json"):
+        if not os.path.exists(ranker_path / "config.json"):
             # other ranker type
             ranker_config_json = {
                 "ranker_type": "other",
@@ -129,7 +129,7 @@ class Blender:
             for k, v in kwargs.items():
                 setattr(self.ranker_config, k, v)
         else:
-            with open(ranker_path / "ranker_config.json", "r") as f:
+            with open(ranker_path / "config.json", "r") as f:
                 ranker_config_json = json.load(f)
             ranker_config = RankerConfig.from_dict(ranker_config_json)
             ranker_config.load_checkpoint = str(ranker_path)

@@ -1,13 +1,17 @@
 #!/bin/bash
 #SBATCH --time=72:00:00
-#SBATCH --job-name=train_ranker
+#SBATCH --job-name=bash
 #SBATCH --output ./jobs/train_ranker/%j.out
-#SBATCH --gres=gpu:a6000:1
-#SBATCH --qos=general
+#SBATCH --gres=gpu:4
+#SBATCH -p a100
+#SBATCH --mem=200G
+#SBATCH -c 10
+#SBATCH --qos=a100_wenhuchen
 
+module load cuda-11.8
 nvidia-smi
 # <== MODIFY THE FOLLOWING PARAMETERS ==>
-dataset="reward_model_mix_train"
+dataset="unified_feedback"
 backbone_type="deberta" # "deberta" or "roberta"
 backbone_name="microsoft/deberta-v3-large" # "microsoft/deberta-v3-large" or "roberta-large"
 n_gpu=4
@@ -28,7 +32,7 @@ do_inference=False # whether do inference instead of training, i.e. do test
 # to do inference on a dataset, you can set the checkpoint_trained_dataset to the dataset
 # by default, it is set to the dataset you are doing inference on
 checkpoint_trained_dataset=""
-run_name_postfix="_10_31" # add a postfix to the run_name
+run_name_postfix="_01_10_2023" # add a postfix to the run_name
 TORCHRUN_CMD="torchrun"
 
 # set the dataset specific parameters below
@@ -68,6 +72,15 @@ elif [[ $dataset =~ "reward_model" ]]; then
     gradient_accumulation_steps=8
     using_metrics="human_preference"
 
+elif [[ $dataset =~ "unified_feedback" ]]; then
+    echo "Using unified_feedback user oriented datasets"
+    source_maxlength=1224
+    candidate_maxlength=412
+    per_device_train_batch_size=4
+    per_device_eval_batch_size=1
+    gradient_accumulation_steps=4
+    using_metrics="human_preference"
+
 else
     echo "Unknown dataset: ${dataset}"
     echo "Please set the dataset specific parameters in the script"
@@ -76,8 +89,8 @@ fi
 
 # <== Less likely to modify the following parameters ==>
 localhost=$RANDOM # random port number
-train_data_path="./data/${dataset}/train_data_prepared_10_31.json"
-dev_data_path="./data/${dataset}/val_data_prepared_10_31.json"
+train_data_path="./data/${dataset}/train_data_prepared.json"
+dev_data_path="./data/${dataset}/val_data_prepared.json"
 test_data_path="./data/${dataset}/test_data_prepared.json"
 if [ ! -f $test_data_path ]; then
     test_data_path=$dev_data_path

@@ -107,6 +107,9 @@ def main(args):
             logging.info(f"Successfully loaded checkpoint from '{args.load_checkpoint}'")
     else:
         config = RankerConfig()
+        for k, v in args.__dict__.items():
+            if k in config.__dict__:
+                setattr(config, k, v)
         model = build_ranker(
             args.ranker_type,
             args.model_type,
@@ -116,6 +119,9 @@ def main(args):
             tokenizer,
         )
         logging.info(f"build new model")
+    for k, v in args.__dict__.items():
+        if k in config.__dict__:
+            setattr(config, k, v)
 
     # set up trainer
     training_args = TrainingArguments(

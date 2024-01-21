@@ -6,3 +6,7 @@ class BlenderConfig:
     device:str = field(default="cuda",
         metadata={"help": "Device, cuda or cpu"}
     )
+    use_tqdm:bool = field(default=True,
+        metadata={"help": "Use tqdm progress bar"}
+    )
+    

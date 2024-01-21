@@ -204,7 +204,7 @@ class Blender:
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
         scores = []
         with torch.no_grad():
-            for batch in tqdm(iter(dataloader), desc="Ranking candidates"):
+            for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
                 batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
                 if self.ranker_config.ranker_type == "pairranker":
                     outputs = self.ranker._full_predict(**batch)
@@ -337,7 +337,7 @@ class Blender:
             best_idxs = []
             rest_idxs = []
             with torch.no_grad():
-                for batch in tqdm(iter(dataloader), desc="Ranking candidates"):
+                for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
                     batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
                     outputs = self.ranker._bubble_predict(**batch)
                     select_process = outputs['select_process'].detach().cpu().numpy()
@@ -419,7 +419,7 @@ class Blender:
             dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
             cmp_results = []
             with torch.no_grad():
-                for batch in tqdm(iter(dataloader), desc="Ranking candidates"):
+                for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
                     batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
                     source_ids, source_attention_mask = batch['source_ids'], batch['source_attention_mask']
                     left_cand_ids, left_cand_attention_mask = batch['candidate_ids'][:, 0], batch['candidate_attention_mask'][:, 0]
@@ -481,7 +481,7 @@ class Blender:
             generate_params.update(generate_kwargs)
             
         generations = []
-        for batch in tqdm(iter(dataloader), desc="Fusing candidates"):
+        for batch in tqdm(iter(dataloader), desc="Fusing candidates", disable=not self.blender_config.use_tqdm):
             batch = {k: v.to(self.blender_config.device) for k, v in batch.items()}
             keep_column_mask = batch['attention_mask'].ne(0).any(dim=0)
             batch['input_ids'] = batch['input_ids'][:, keep_column_mask]

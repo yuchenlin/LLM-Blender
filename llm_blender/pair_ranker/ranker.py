@@ -657,6 +657,7 @@ class CrossCompareReranker(nn.Module):
         candidate_attention_mask,
         scores=None,
         num_runs=1,
+        best_or_worst="best",
     ):
         """
             bubble prediction
@@ -711,8 +712,12 @@ class CrossCompareReranker(nn.Module):
                 loss += _outputs['loss']
                 preds_inv = -_outputs['logits']
 
-                permu[:, j] = torch.where(preds + preds_inv <= 0, cur_idx, next_idx)
-                permu[:, j+1] = torch.where(preds + preds_inv > 0, cur_idx, next_idx)
+                if best_or_worst == "best":
+                    permu[:, j] = torch.where(preds + preds_inv <= 0, cur_idx, next_idx)
+                    permu[:, j+1] = torch.where(preds + preds_inv > 0, cur_idx, next_idx)
+                elif best_or_worst == "worst":
+                    permu[:, j] = torch.where(preds + preds_inv >= 0, cur_idx, next_idx)
+                    permu[:, j+1] = torch.where(preds + preds_inv < 0, cur_idx, next_idx)
                 assert torch.ne(permu[:, j], permu[:, j+1]).all()
                 better_idx = permu[:, j+1].clone()
                 better_idxs.append(better_idx)

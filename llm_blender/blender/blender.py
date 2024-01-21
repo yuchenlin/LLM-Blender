@@ -431,6 +431,7 @@ class Blender:
                     worst_candidates.append([candidates[i][x] for x in all_idxes[i]])
         else:
             ranks = self.rank(inputs, candidates, instructions=instructions, batch_size=batch_size)
+            ranks = -ranks
             if not return_all:
                 worst_candidates = get_topk_candidates_from_ranks(ranks, candidates, top_k=1)
                 worst_candidates = [x[0] for x in worst_candidates]

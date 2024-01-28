@@ -139,7 +139,7 @@ class Blender:
         self.ranker_config.device = device or self.ranker_config.device or self.blender_config.device
     
         self.ranker, self.ranker_tokenizer, self.ranker_collator = load_ranker(ranker_config)
-        device = self.blender_config.device
+        device = self.ranker_config.device
         if device in ["cuda", "mps"] and ranker_config.fp16:
             self.ranker = self.ranker.half()
         else:

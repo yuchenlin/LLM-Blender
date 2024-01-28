@@ -71,9 +71,6 @@ class Blender:
         else:
             fuser_path = self.fuser_config.model_name
             self.loadfuser(fuser_path, **self.fuser_config.to_dict())
-            fuser_config.device = self.blender_config.device
-            self.fuser, self.fuser_tokenizer = load_fuser(fuser_config)
-            self.fuser.eval()
         
     def loadranker(self, ranker_path:str, device:str=None, **kwargs):
         """Load ranker from a path
@@ -139,10 +136,11 @@ class Blender:
                 if k in ['load_checkpoint', 'cache_dir']:
                     continue
                 setattr(self.ranker_config, k, v)
+        self.ranker_config.device = device or self.ranker_config.device or self.blender_config.device
     
         self.ranker, self.ranker_tokenizer, self.ranker_collator = load_ranker(ranker_config)
-        device = device or self.blender_config.device
-        if device == "cuda" and ranker_config.fp16:
+        device = self.blender_config.device
+        if device in ["cuda", "mps"] and ranker_config.fp16:
             self.ranker = self.ranker.half()
         else:
             self.ranker = self.ranker.float()
@@ -164,9 +162,9 @@ class Blender:
         """
         self.fuser_config = GenFuserConfig()
         self.fuser_config.model_name = fuser_path
-        self.fuser_config.device = device or self.blender_config.device
         for k, v in kwargs.items():
             setattr(self.fuser_config, k, v)
+        self.fuser_config.device = device or self.fuser_config.device or self.blender_config.device
         self.fuser, self.fuser_tokenizer = load_fuser(self.fuser_config)
         self.fuser.eval()
     
@@ -205,7 +203,7 @@ class Blender:
         scores = []
         with torch.no_grad():
             for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
-                batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
+                batch = {k: v.to(self.ranker_config.device) for k, v in batch.items() if v is not None}
                 if self.ranker_config.ranker_type == "pairranker":
                     outputs = self.ranker._full_predict(**batch)
                     preds = outputs['logits'].detach().cpu().numpy()
@@ -338,7 +336,7 @@ class Blender:
             rest_idxs = []
             with torch.no_grad():
                 for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
-                    batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
+                    batch = {k: v.to(self.ranker_config.device) for k, v in batch.items() if v is not None}
                     outputs = self.ranker._bubble_predict(**batch)
                     select_process = outputs['select_process'].detach().cpu().numpy()
                     best_idx = select_process[:, 2, -1]
@@ -409,7 +407,7 @@ class Blender:
             rest_idxs = []
             with torch.no_grad():
                 for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
-                    batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
+                    batch = {k: v.to(self.ranker_config.device) for k, v in batch.items() if v is not None}
                     outputs = self.ranker._bubble_predict(**batch, best_or_worst="worst")
                     select_process = outputs['select_process'].detach().cpu().numpy()
                     worst_idx = select_process[:, 2, -1]
@@ -492,7 +490,7 @@ class Blender:
             cmp_results = []
             with torch.no_grad():
                 for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
-                    batch = {k: v.to(self.blender_config.device) for k, v in batch.items() if v is not None}
+                    batch = {k: v.to(self.ranker_config.device) for k, v in batch.items() if v is not None}
                     source_ids, source_attention_mask = batch['source_ids'], batch['source_attention_mask']
                     left_cand_ids, left_cand_attention_mask = batch['candidate_ids'][:, 0], batch['candidate_attention_mask'][:, 0]
                     right_cand_ids, right_cand_attention_mask = batch['candidate_ids'][:, 1], batch['candidate_attention_mask'][:, 1]
@@ -554,7 +552,7 @@ class Blender:
             
         generations = []
         for batch in tqdm(iter(dataloader), desc="Fusing candidates", disable=not self.blender_config.use_tqdm):
-            batch = {k: v.to(self.blender_config.device) for k, v in batch.items()}
+            batch = {k: v.to(self.fuser_config.device) for k, v in batch.items()}
             keep_column_mask = batch['attention_mask'].ne(0).any(dim=0)
             batch['input_ids'] = batch['input_ids'][:, keep_column_mask]
             batch['attention_mask'] = batch['attention_mask'][:, keep_column_mask]

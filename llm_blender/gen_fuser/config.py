@@ -21,5 +21,8 @@ class GenFuserConfig:
         metadata={"help": "Load in 4bit"})
     load_in_8bit:bool = field(default=False,
         metadata={"help": "Load in 8bit"})
+    device:str = field(default=None,
+        metadata={"help": "Device, cuda or cpu or mps"}
+    )
 
                   

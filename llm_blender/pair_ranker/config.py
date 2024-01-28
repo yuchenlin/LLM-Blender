@@ -57,6 +57,9 @@ class RankerConfig:
     fp16:bool = field(default=True,
         metadata={"help": "Whether to use fp16"}
     )
+    device:str = field(default=None,
+        metadata={"help": "Device, cuda or cpu or mps"}
+    )
 
 
 

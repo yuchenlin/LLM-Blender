@@ -11,8 +11,12 @@ from .collator import (
     DualCollator,
     SCRCollator,
     CrossCompareCollator,
-    OtherRMCollator,
+    DebertaRMCollator,
+    StarlingRMCollator,
+    UltraRMCollator
 )
+from .other_rms.starling_rm import StarlingRM
+from .other_rms.ultra_rm import UltraRM
 from transformers import (
     RobertaModel,
     BertModel,
@@ -36,6 +40,8 @@ def build_pretrained_model(model_type, model_name, **kwargs):
         model = T5ForConditionalGeneration.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("bart"):
         model = BartForConditionalGeneration.from_pretrained(model_name, **kwargs)
+    elif model_type.startswith("deberta-rm"):
+        model = AutoModelForSequenceClassification.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("deberta"):
         from transformers import AutoModel
         model = AutoModel.from_pretrained(model_name, **kwargs)
@@ -48,6 +54,11 @@ def build_pretrained_model(model_type, model_name, **kwargs):
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("opt"):
         model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
+    elif model_type.startswith("starling-rm"):
+        model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", **kwargs)
+    elif model_type.startswith("ultra-rm"):
+        
+        model = UltraRM.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("other"):
         model = AutoModelForSequenceClassification.from_pretrained(model_name, **kwargs)
     else:
@@ -66,6 +77,10 @@ def build_tokenizer(model_name, **kwargs):
     if "alpaca" in model_name or "llama" in model_name:
         # padding left
         tokenizer = AutoTokenizer.from_pretrained(model_name, padding_side="left", **kwargs)
+    elif "starling-rm" in model_name.lower():
+        tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf", **kwargs)
+        tokenizer.pad_token = tokenizer.unk_token
+        tokenizer.truncation_side = "left"
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_name, **kwargs)
     if tokenizer.pad_token is None:
@@ -76,19 +91,27 @@ def build_tokenizer(model_name, **kwargs):
 def build_ranker(ranker_type, model_type, model_name, cache_dir, config, tokenizer):
     ranker = None
     pretrained_model = build_pretrained_model(model_type, model_name, cache_dir=cache_dir)
-    pretrained_model.resize_token_embeddings(len(tokenizer))
     if ranker_type == "summareranker":
+        pretrained_model.resize_token_embeddings(len(tokenizer))
         ranker = SummaReranker(pretrained_model, config, tokenizer)
     elif ranker_type == "dual":
+        pretrained_model.resize_token_embeddings(len(tokenizer))
         ranker = DualReranker(pretrained_model, config, tokenizer)
     elif ranker_type == "pairranker":
+        pretrained_model.resize_token_embeddings(len(tokenizer))
         ranker = CrossCompareReranker(pretrained_model, config, tokenizer)
-    elif ranker_type == "other":
+    elif ranker_type == "deberta-rm":
         ranker = pretrained_model
+    elif ranker_type == "starling-rm":
+        ranker = StarlingRM(pretrained_model, config, tokenizer)
+    elif ranker_type == "ultra-rm":
+        ranker = pretrained_model
+    else:
+        raise ValueError(f"ranker_type {ranker_type} not supported")
     return ranker
 
 def build_collator(
-    model_type:str,
+    ranker_type:str,
     tokenizer,
     source_maxlength:int,
     candidate_maxlength:int,
@@ -96,16 +119,20 @@ def build_collator(
     candidate1_prefix:str = None,
     candidate2_prefix:str = None,
     ):
-    if model_type == "summareranker":
+    if ranker_type == "summareranker":
         return SCRCollator(source_maxlength, tokenizer, candidate_maxlength, source_prefix, candidate1_prefix)
-    elif model_type == "dual":
+    elif ranker_type == "dual":
         return DualCollator(source_maxlength, tokenizer, candidate_maxlength, source_prefix, candidate1_prefix)
-    elif model_type == "pairranker":
+    elif ranker_type == "pairranker":
         return CrossCompareCollator(source_maxlength, tokenizer, candidate_maxlength, source_prefix, candidate1_prefix, candidate2_prefix)
-    elif model_type == "other":
-        return OtherRMCollator(source_maxlength, tokenizer, candidate_maxlength, "", "")
+    elif ranker_type == "deberta-rm":
+        return DebertaRMCollator(source_maxlength, tokenizer, candidate_maxlength)
+    elif ranker_type == "starling-rm":
+        return StarlingRMCollator(source_maxlength, tokenizer, candidate_maxlength)
+    elif ranker_type == "ultra-rm":
+        return UltraRMCollator(source_maxlength, tokenizer, candidate_maxlength)
     else:
-        raise ValueError(f"model_type {model_type} not supported")
+        raise ValueError(f"ranker_type {ranker_type} not supported")
 
 
 def get_torch_dtype(dtype_str):

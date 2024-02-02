@@ -5,14 +5,14 @@ from dataclasses_json import dataclass_json
 @dataclass
 class RankerConfig:
     ranker_type:str = field(
-        default="pairranker",
+        default=None,
         metadata={"help": "Ranker type, pairranker or reranker \
                   choices: summareranker, dual, pairranker, other;"},
     )
-    model_type:str = field(default="deberta",
-        metadata={"help": "Model type, deberta or roberta"}
+    model_type:str = field(default=None,
+        metadata={"help": "Model type, deberta or roberta or other"}
     )
-    model_name:str = field(default="microsoft/deberta-v3-large",
+    model_name:str = field(default=None,
         metadata={"help": "Model name"}
     )
     cache_dir:str = field(default=None,
@@ -21,10 +21,10 @@ class RankerConfig:
     load_checkpoint:str = field(default=None,
         metadata={"help": "Load checkpoint path"}
     )
-    source_maxlength:int = field(default=128,
+    source_maxlength:int = field(default=None,
         metadata={"help": "Max length of the source sequence"}
     )
-    candidate_maxlength:int = field(default=128,
+    candidate_maxlength:int = field(default=None,
         metadata={"help": "Max length of the candidate sequence"}
     )
     n_tasks:int = field(default=1,

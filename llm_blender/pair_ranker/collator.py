@@ -222,7 +222,7 @@ class CrossCompareCollator(object):
             "scores" : scores,
         }
         
-class OtherRMCollator(object):
+class DebertaRMCollator(object):
     def __init__(
         self,
         source_maxlength,
@@ -241,7 +241,7 @@ class OtherRMCollator(object):
         self.separate_token = self.sep_token
         self.source_prefix = source_prefix if source_prefix is not None else ""
         self.candidate_prefix = candidate_prefix if candidate_prefix is not None else ""
-        self.model_max_length = min(tokenizer.model_max_length, self.source_maxlength+self.candidate_maxlength+3)
+        self.model_max_length = tokenizer.model_max_length
 
 
     def __call__(self, batch):
@@ -255,9 +255,104 @@ class OtherRMCollator(object):
         encodings = self.tokenizer(
             [s for s in batch_source for _ in range(len(batch_candidates[0]))],
             [c for cs in batch_candidates for c in cs],
-            padding='max_length',
+            padding='longest',
             return_tensors='pt',
+            truncation=False,
+            max_length=self.model_max_length,
+        )
+
+        return {**encodings}
+    
+
+class StarlingRMCollator(object):
+    template = "<s>[INST] {instruction} </s> [/INST] {completion}</s>"
+    def __init__(
+        self,
+        source_maxlength,
+        tokenizer,
+        candidate_maxlength,
+        source_prefix=None,
+        candidate_prefix=None,
+    ):
+        self.tokenizer = tokenizer
+        self.source_maxlength = source_maxlength
+        self.candidate_maxlength = candidate_maxlength
+
+        self.sep_token = tokenizer.sep_token if tokenizer.sep_token is not None else tokenizer.eos_token
+        self.cls_token = tokenizer.cls_token if tokenizer.cls_token is not None else tokenizer.bos_token
+        assert self.sep_token is not None, 'sep_token is not found in the tokenizer'
+        self.separate_token = self.sep_token
+        self.source_prefix = source_prefix if source_prefix is not None else ""
+        self.candidate_prefix = candidate_prefix if candidate_prefix is not None else ""
+        self.model_max_length = tokenizer.model_max_length
+
+
+    def __call__(self, batch):
+        batch_size = len(batch)
+        batch_source = [b['source'] for b in batch]
+        batch_candidates = [b['candidates'] for b in batch]
+
+        batch_source = get_truncated_text(batch_source, self.tokenizer, self.source_maxlength)
+        batch_candidates = [get_truncated_text(c, self.tokenizer, self.candidate_maxlength) for c in batch_candidates]
+        
+        input_texts = []
+        for i in range(batch_size):
+            for j in range(len(batch_candidates[i])):
+                input_texts.append(self.template.format(instruction=batch_source[i], completion=batch_candidates[i][j]))
+        
+        encodings = self.tokenizer(
+            input_texts,
             truncation=True,
+            max_length=2048,
+            padding="max_length",
+            return_tensors="pt",
+        )
+
+        return {**encodings}
+    
+
+class UltraRMCollator(object):
+    template = "Human: {instruction}\n\nAssistant: {completion}"
+
+    def __init__(
+        self,
+        source_maxlength,
+        tokenizer,
+        candidate_maxlength,
+        source_prefix=None,
+        candidate_prefix=None,
+    ):
+        self.tokenizer = tokenizer
+        self.source_maxlength = source_maxlength
+        self.candidate_maxlength = candidate_maxlength
+
+        self.sep_token = tokenizer.sep_token if tokenizer.sep_token is not None else tokenizer.eos_token
+        self.cls_token = tokenizer.cls_token if tokenizer.cls_token is not None else tokenizer.bos_token
+        assert self.sep_token is not None, 'sep_token is not found in the tokenizer'
+        self.separate_token = self.sep_token
+        self.source_prefix = source_prefix if source_prefix is not None else ""
+        self.candidate_prefix = candidate_prefix if candidate_prefix is not None else ""
+        self.model_max_length = tokenizer.model_max_length
+
+
+    def __call__(self, batch):
+        batch_size = len(batch)
+        batch_source = [b['source'] for b in batch]
+        batch_candidates = [b['candidates'] for b in batch]
+
+        batch_source = get_truncated_text(batch_source, self.tokenizer, self.source_maxlength)
+        batch_candidates = [get_truncated_text(c, self.tokenizer, self.candidate_maxlength) for c in batch_candidates]
+        
+        input_texts = []
+        for i in range(batch_size):
+            for j in range(len(batch_candidates[i])):
+                input_texts.append(self.template.format(instruction=batch_source[i], completion=batch_candidates[i][j]))
+        
+        encodings = self.tokenizer(
+            input_texts,
+            padding='longest',
+            return_tensors='pt',
+            truncation=False,
             max_length=self.model_max_length,
         )
 

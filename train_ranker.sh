@@ -8,14 +8,13 @@
 #SBATCH -c 10
 #SBATCH --qos=a100_wenhuchen
 
-export CUDA_VISIBLE_DEVICES=0,1,2,3
 # module load cuda-11.8
 nvidia-smi
 # <== MODIFY THE FOLLOWING PARAMETERS ==>
-dataset="reward_model"
+dataset="pairrm_2.7b"
 backbone_type="phi" # "deberta" or "roberta"
 backbone_name="microsoft/phi-2" # "microsoft/deberta-v3-large" or "roberta-large"
-n_gpu=4
+n_gpu=8
 ranker="PairRanker" # "PairRanker" or "Summareranker" or "SimCLS"
 candidate_model="" # separted by comma. Empty string for all models
 candidate_decoding_method="" # separted by comma. Empty string for all methods
@@ -34,7 +33,13 @@ do_inference=False # whether do inference instead of training, i.e. do test
 # by default, it is set to the dataset you are doing inference on
 checkpoint_trained_dataset=""
 run_name_postfix="_01_10_2023" # add a postfix to the run_name
-TORCHRUN_CMD="torchrun"
+# LAUNCH_CMD="torchrun \
+# --rdzv_backend=c10d \
+# --rdzv_endpoint="localhost:${localhost}" \
+# --nnodes 1 \
+# --nproc_per_node ${n_gpu} "
+
+LAUNCH_CMD="deepspeed --num_gpus ${n_gpu}"
 
 # set the dataset specific parameters below
 if [[ $dataset =~ "mixinstruct" ]]; then
@@ -82,6 +87,15 @@ elif [[ $dataset =~ "unified_feedback" ]]; then
     gradient_accumulation_steps=4
     using_metrics="human_preference"
 
+elif [[ $dataset =~ "pairrm_2.7b" ]]; then
+    echo "Using unified_feedback user oriented datasets"
+    source_maxlength=1224
+    candidate_maxlength=412
+    per_device_train_batch_size=1
+    per_device_eval_batch_size=1
+    gradient_accumulation_steps=8
+    using_metrics="human_preference"
+
 else
     echo "Unknown dataset: ${dataset}"
     echo "Please set the dataset specific parameters in the script"
@@ -90,9 +104,9 @@ fi
 
 # <== Less likely to modify the following parameters ==>
 localhost=$RANDOM # random port number
-train_data_path="./data/${dataset}/train_data_prepared.json"
-dev_data_path="./data/${dataset}/val_data_prepared.json"
-test_data_path="./data/${dataset}/test_data_prepared.json"
+train_data_path="./data/${dataset}/train_ht.json"
+dev_data_path="./data/${dataset}/test.json"
+test_data_path="./data/${dataset}/test.json"
 if [ ! -f $test_data_path ]; then
     test_data_path=$dev_data_path
 fi
@@ -123,11 +137,7 @@ if [[ $ranker = "PairRanker" ]]; then
 
     run_name="${run_name}${run_name_postfix}"
 
-    ${TORCHRUN_CMD} \
-        --rdzv_backend=c10d \
-        --rdzv_endpoint="localhost:${localhost}" \
-        --nnodes 1 \
-        --nproc_per_node ${n_gpu} \
+    ${LAUNCH_CMD} \
     train_ranker.py \
         --ranker_type ${ranker_type} \
         --model_type ${backbone_type} \
@@ -162,7 +172,7 @@ if [[ $ranker = "PairRanker" ]]; then
         --loss_type "instructgpt" \
         --sub_sampling_mode "all_pair" \
         --overwrite_output_dir True \
-        --deepspeed "./zero_configs/zero3.json" \
+        --deepspeed "./zero_configs/zero3_offload.json" \
 
 
 elif [[ $ranker = "Summareranker" ]]; then
@@ -184,7 +194,7 @@ elif [[ $ranker = "Summareranker" ]]; then
 
     run_name="${run_name}${run_name_postfix}"
 
-    ${TORCHRUN_CMD} \
+    ${LAUNCH_CMD} \
         --rdzv_backend=c10d \
         --rdzv_endpoint="localhost:${localhost}" \
         --nnodes 1 \
@@ -242,7 +252,7 @@ elif [[ $ranker = "SimCLS" ]]; then
 
     run_name="${run_name}${run_name_postfix}"
 
-    ${TORCHRUN_CMD} \
+    ${LAUNCH_CMD} \
         --rdzv_backend=c10d \
         --rdzv_endpoint="localhost:${localhost}" \
         --nnodes 1 \

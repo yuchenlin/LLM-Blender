@@ -162,8 +162,8 @@ if [[ $ranker = "PairRanker" ]]; then
         --loss_type "instructgpt" \
         --sub_sampling_mode "all_pair" \
         --overwrite_output_dir True \
-        --deepspeed "./zero_configs/zero2.json" \
-        
+        --deepspeed "./zero_configs/zero3.json" \
+
 
 elif [[ $ranker = "Summareranker" ]]; then
     echo "Using Summareranker"

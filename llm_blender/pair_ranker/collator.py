@@ -4,7 +4,7 @@ import random
 import json
 import numpy as np
 
-def encode_texts(texts, tokenizer, max_length):
+def encode_texts(texts, tokenizer, max_length=None):
     """
     Args:
         texts List[str]: [n_texts]
@@ -21,7 +21,7 @@ def encode_texts(texts, tokenizer, max_length):
     )
     return p['input_ids'], p['attention_mask']
 
-def encode_batch_text(batch_texts, tokenizer, max_length):
+def encode_batch_text(batch_texts, tokenizer, max_length=None):
     """
     Args:
         batch_texts List[str]: [batch_size, n_texts]
@@ -40,7 +40,7 @@ def encode_batch_text(batch_texts, tokenizer, max_length):
     encoded_masks = torch.cat(encoded_masks, dim=0)
     return encoded_ids, encoded_masks
 
-def get_truncated_text(texts, tokenizer, max_length):
+def get_truncated_text(texts, tokenizer, max_length=None):
     """
         Truncate the texts to max_length
     """
@@ -183,6 +183,7 @@ class CrossCompareCollator(object):
         self.mannually_add_sep_token = False
         if len(self.tokenizer.encode(self.sep_token)) == 1:
             self.mannually_add_sep_token = True
+            self.sep_token_id_in_list = self.tokenizer.encode(self.sep_token)
 
         # add prefix
         tokenizer.add_tokens([self.source_prefix, self.candidate1_prefix, self.candidate2_prefix, self.candidate_prefix]) # debug
@@ -208,19 +209,32 @@ class CrossCompareCollator(object):
             scores = None
         
         if self.mannually_add_sep_token:
+            batch_source = get_truncated_text(batch_source, self.tokenizer, self.source_maxlength)
             batch_source = [s + self.sep_token for s in batch_source]
-            batch_candidates = [[cand + self.sep_token for cand in cands] for cands in batch_candidates]
+            source_ids, source_masks = encode_texts(batch_source, self.tokenizer)
+            valid_positions = source_masks.any(dim=0)
+            source_ids = source_ids[:, valid_positions]
+            source_masks = source_masks[:, valid_positions]
+            remaining_length = self.source_maxlength - valid_positions.sum().item()
             
-        source_ids, source_masks = encode_texts(batch_source, self.tokenizer, self.source_maxlength)
-        valid_positions = source_masks.any(dim=0)
-        source_ids = source_ids[:, valid_positions]
-        source_masks = source_masks[:, valid_positions]
-        remaining_length = self.source_maxlength - valid_positions.sum().item()
-        
-        candidate_ids, candidate_masks = encode_batch_text(batch_candidates, self.tokenizer, self.candidate_maxlength + remaining_length // 2)
-        cand_valid_positions = candidate_masks.reshape(-1, candidate_masks.shape[-1]).any(dim=0)
-        candidate_ids = candidate_ids[:, :, cand_valid_positions]
-        candidate_masks = candidate_masks[:, :, cand_valid_positions]
+            batch_candidates = [get_truncated_text(c, self.tokenizer, self.candidate_maxlength + remaining_length // 2) for c in batch_candidates]
+            batch_candidates = [[cand + self.sep_token for cand in cands] for cands in batch_candidates]
+            candidate_ids, candidate_masks = encode_batch_text(batch_candidates, self.tokenizer)
+            cand_valid_positions = candidate_masks.reshape(-1, candidate_masks.shape[-1]).any(dim=0)
+            candidate_ids = candidate_ids[:, :, cand_valid_positions]
+            candidate_masks = candidate_masks[:, :, cand_valid_positions]
+        else:
+            
+            source_ids, source_masks = encode_texts(batch_source, self.tokenizer, self.source_maxlength)
+            valid_positions = source_masks.any(dim=0)
+            source_ids = source_ids[:, valid_positions]
+            source_masks = source_masks[:, valid_positions]
+            remaining_length = self.source_maxlength - valid_positions.sum().item()
+            
+            candidate_ids, candidate_masks = encode_batch_text(batch_candidates, self.tokenizer, self.candidate_maxlength + remaining_length // 2)
+            cand_valid_positions = candidate_masks.reshape(-1, candidate_masks.shape[-1]).any(dim=0)
+            candidate_ids = candidate_ids[:, :, cand_valid_positions]
+            candidate_masks = candidate_masks[:, :, cand_valid_positions]
         
         return {
             "source_ids" : source_ids,

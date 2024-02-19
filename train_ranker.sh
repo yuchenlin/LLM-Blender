@@ -195,10 +195,6 @@ elif [[ $ranker = "Summareranker" ]]; then
     run_name="${run_name}${run_name_postfix}"
 
     ${LAUNCH_CMD} \
-        --rdzv_backend=c10d \
-        --rdzv_endpoint="localhost:${localhost}" \
-        --nnodes 1 \
-        --nproc_per_node ${n_gpu} \
     train_ranker.py \
         --ranker_type ${ranker_type} \
         --model_type ${backbone_type} \
@@ -253,10 +249,6 @@ elif [[ $ranker = "SimCLS" ]]; then
     run_name="${run_name}${run_name_postfix}"
 
     ${LAUNCH_CMD} \
-        --rdzv_backend=c10d \
-        --rdzv_endpoint="localhost:${localhost}" \
-        --nnodes 1 \
-        --nproc_per_node ${n_gpu} \
     train_ranker.py \
         --ranker_type ${ranker_type} \
         --model_type ${backbone_type} \

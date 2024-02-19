@@ -179,6 +179,10 @@ class CrossCompareCollator(object):
         self.candidate2_prefix = candidate2_prefix if candidate2_prefix is not None else "<|candidate2|>"
         self.candidate_prefix = "<|candidate|>"
         self.max_length = min(self.tokenizer.model_max_length, self.source_maxlength + 2 * self.candidate_maxlength + 6)
+        
+        self.mannually_add_sep_token = False
+        if len(self.tokenizer.encode(self.sep_token)) == 1:
+            self.mannually_add_sep_token = True
 
         # add prefix
         tokenizer.add_tokens([self.source_prefix, self.candidate1_prefix, self.candidate2_prefix, self.candidate_prefix]) # debug
@@ -202,6 +206,10 @@ class CrossCompareCollator(object):
             scores = torch.tensor([b['scores'] for b in batch])
         else:
             scores = None
+        
+        if self.mannually_add_sep_token:
+            batch_source = [s + self.sep_token for s in batch_source]
+            batch_candidates = [[cand + self.sep_token for cand in cands] for cands in batch_candidates]
             
         source_ids, source_masks = encode_texts(batch_source, self.tokenizer, self.source_maxlength)
         valid_positions = source_masks.any(dim=0)

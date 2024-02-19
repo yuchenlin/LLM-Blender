@@ -8,12 +8,13 @@
 #SBATCH -c 10
 #SBATCH --qos=a100_wenhuchen
 
-module load cuda-11.8
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+# module load cuda-11.8
 nvidia-smi
 # <== MODIFY THE FOLLOWING PARAMETERS ==>
-dataset="unified_feedback"
-backbone_type="deberta" # "deberta" or "roberta"
-backbone_name="microsoft/deberta-v3-large" # "microsoft/deberta-v3-large" or "roberta-large"
+dataset="reward_model"
+backbone_type="phi" # "deberta" or "roberta"
+backbone_name="microsoft/phi-2" # "microsoft/deberta-v3-large" or "roberta-large"
 n_gpu=4
 ranker="PairRanker" # "PairRanker" or "Summareranker" or "SimCLS"
 candidate_model="" # separted by comma. Empty string for all models
@@ -161,6 +162,8 @@ if [[ $ranker = "PairRanker" ]]; then
         --loss_type "instructgpt" \
         --sub_sampling_mode "all_pair" \
         --overwrite_output_dir True \
+        --deepspeed "./zero_configs/zero2.json" \
+        
 
 elif [[ $ranker = "Summareranker" ]]; then
     echo "Using Summareranker"

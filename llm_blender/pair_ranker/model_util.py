@@ -57,10 +57,11 @@ def build_pretrained_model(model_type, model_name, **kwargs):
     elif model_type.startswith("starling-rm"):
         model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-chat-hf", **kwargs)
     elif model_type.startswith("ultra-rm"):
-        
         model = UltraRM.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("other"):
         model = AutoModelForSequenceClassification.from_pretrained(model_name, **kwargs)
+    elif model_type.startswith("phi"):
+        model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True, **kwargs)
     else:
         raise ValueError("Model type not supported")
     
@@ -81,6 +82,10 @@ def build_tokenizer(model_name, **kwargs):
         tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-7b-chat-hf", **kwargs)
         tokenizer.pad_token = tokenizer.unk_token
         tokenizer.truncation_side = "left"
+    elif "phi" in model_name:
+        tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True, **kwargs)
+        tokenizer.add_special_tokens({"sep_token": "<|sepoftext|>"})
+        tokenizer.sep_token = "<|sepoftext|>"
     else:
         tokenizer = AutoTokenizer.from_pretrained(model_name, **kwargs)
     if tokenizer.pad_token is None:

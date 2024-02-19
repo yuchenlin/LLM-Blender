@@ -305,6 +305,7 @@ class CrossCompareReranker(nn.Module):
     def __init__(self, pretrained_model, args, tokenizer):
         super(CrossCompareReranker, self).__init__()
         self.args = args
+        self.config = pretrained_model.config
         self.n_tasks = self.args.n_tasks
         self.num_pos = self.args.num_pos
         self.num_neg = self.args.num_neg

@@ -243,7 +243,7 @@ if __name__ == "__main__":
         "summareranker", "dual", "pairranker"
     ], default="sc")
     parser.add_argument("--model_type", type=str, choices=[
-        "roberta", "bert", "t5", 'deberta', 'xlm-roberta', 'flan-t5', 'alpaca', 'opt'
+        "roberta", "bert", "t5", 'deberta', 'xlm-roberta', 'flan-t5', 'alpaca', 'opt', 'phi'
     ], default="roberta")
     parser.add_argument("--model_name", type=str, default="roberta-base")
     parser.add_argument("--load_checkpoint", type=empty2None, default=None)

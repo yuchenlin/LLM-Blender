@@ -15,12 +15,8 @@ from absl import logging
 from torch import split
 from tqdm import tqdm
 from nltk import sent_tokenize
-from rouge_score import rouge_scorer
+
 from tqdm.contrib.concurrent import process_map
-from pycocoevalcap.spice.spice import Spice
-from pycocoevalcap.cider.cider import Cider
-from pycocoevalcap.bleu.bleu import Bleu
-from pycocoevalcap.tokenizer.ptbtokenizer import PTBTokenizer
 logging.set_verbosity(logging.WARNING)
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:512"
@@ -63,6 +59,7 @@ def eval_rouge(
         A dict of rouge scores.
         key is the rouge type, value is the rouge score, in same shape with hypotheses.
     """
+    from rouge_score import rouge_scorer
     assert len(hypotheses) == len(references)
     assert set(rouge_types) <= set(['rouge1', 'rouge2', 'rougeL', 'rougeLsum']), "Rouge types should be in ['rouge1', 'rouge2', 'rougeL', 'rougeLsum']"
     scorer = rouge_scorer.RougeScorer(rouge_types, use_stemmer=True, split_summaries=True)
@@ -168,6 +165,8 @@ def eval_bleu4(
     Returns:
         A list of bleu scores, in same shape with hypotheses.
     """
+    from pycocoevalcap.bleu.bleu import Bleu
+    
     print("Evaluating bleu4")
     assert len(hypotheses) == len(references)
     # tokenization
@@ -214,6 +213,8 @@ def eval_cider(
         hypotheses: the hypotheses
         references: the references
     """
+    from pycocoevalcap.cider.cider import Cider
+    
     print("Evaluating cider")
     assert len(hypotheses) == len(references)
 
@@ -284,6 +285,8 @@ def eval_spice(
         hypotheses: the hypotheses
         references: the references
     """
+    from pycocoevalcap.spice.spice import Spice
+    
     print("Evaluating spice")
     assert len(hypotheses) == len(references)
     # tokenization

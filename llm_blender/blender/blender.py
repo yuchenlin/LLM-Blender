@@ -190,6 +190,7 @@ class Blender:
         instructions:List[str]=None, 
         return_scores:bool=False,
         batch_size:int=8,
+        disable_tqdm:bool=False,
         **rank_kwargs
     ):
         """Rank candidates for each input
@@ -199,6 +200,7 @@ class Blender:
             instructions List[str]: List of instructions. if not None, will be prepended to the corresponding input
             return_scores bool: If True, will return scores instead of ranks
             batch_size int: batch size for ranking
+            rank_kwargs: kwargs for ranker, e.g. source_max_length, candidate_max_length
         Returns:
             ranks List[List[int]]: Ranks of candidates for each input. Lower is better. ranks[i][j] is the rank of the j-th candidate for the i-th input
             or 
@@ -217,7 +219,7 @@ class Blender:
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
         scores = []
         with torch.no_grad():
-            for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
+            for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=(not self.blender_config.use_tqdm or disable_tqdm)):
                 batch = {k: v.to(self.ranker_config.device) for k, v in batch.items() if v is not None}
                 if self.ranker_config.ranker_type == "pairranker":
                     outputs = self.ranker._full_predict(**batch)
@@ -240,6 +242,77 @@ class Blender:
             return scores
         else:
             return get_ranks_from_scores(scores)
+    
+    def rank_with_ref(
+        self, 
+        inputs:List[str], 
+        candidates:List[List[str]], 
+        instructions:List[str]=None, 
+        return_scores:bool=False,
+        batch_size:int=8,
+        ref_mode:str="longest",
+        ref_candidates:List[str]=None,
+        **rank_kwargs
+    ):
+        """Rank candidates for each input with reference candidates
+        Args:
+            inputs List[str]: List of input texts
+            candidates List[List[str]]: List of list of candidate texts, meaning each input can have multiple candidates
+            instructions List[str]: List of instructions. if not None, will be prepended to the corresponding input
+            return_scores bool: If True, will return scores instead of ranks
+            batch_size int: batch size for ranking
+            ref_mode str: 
+                "longest" or "shortest" or "median_length" or "first" or "last"
+                If "longest", will use the longest reference candidate for each input
+                If "shortest", will use the shortest reference candidate for each input
+                If "median_length", will use the median length of reference candidates for each input
+                If "first", will use the first reference candidate for each input
+                If "last", will use the last reference candidate for each input
+            ref_candidates List[str]: List of reference candidates. If not None, will use ref_candidates as reference candidates. Overrides ref_mode
+            rank_kwargs: kwargs for ranker, e.g. source_max_length, candidate_max_length
+        Returns:
+            ranks List[List[int]]: Ranks of candidates for each input. Lower is better. ranks[i][j] is the rank of the j-th candidate for the i-th input
+            or 
+            scores List[List[float]]: Scores of candidates for each input. Higher is better. scores[i][j] is the score of the j-th candidate for the i-th input
+        """
+        
+        if ref_candidates is None:
+            if ref_mode == "longest":
+                ref_candidates = [max(_candidates, key=len) for _candidates in candidates]
+            elif ref_mode == "shortest":
+                ref_candidates = [min(_candidates, key=len) for _candidates in candidates]
+            elif ref_mode == "median_length":
+                ref_candidates = [sorted(_candidates, key=len)[len(_candidates)//2] for _candidates in candidates]
+            elif ref_mode == "first":
+                ref_candidates = [x[0] for x in candidates]
+            elif ref_mode == "last":
+                ref_candidates = [x[-1] for x in candidates]
+            else:
+                raise ValueError(f"Unknown ref_mode: {ref_mode}")
+        else:
+            assert len(ref_candidates) == len(inputs), "Number of ref_candidates must be the same as inputs"
+            assert all([isinstance(x, str) for x in ref_candidates]), "Each ref_candidate must be a string"
+        
+        num_candidates_per_input = len(candidates[0])
+        assert all([len(c) == num_candidates_per_input for c in candidates]), "Number of candidates for each input must be the same"
+
+        logits = np.zeros((len(inputs), num_candidates_per_input))
+        with tqdm(total=len(inputs) * num_candidates_per_input, desc="Ranking with referencie for candidates", disable=not self.blender_config.use_tqdm) as pbar:
+            for j in range(num_candidates_per_input):
+                for i in range(0, len(candidates), batch_size):
+                    batch_candidates = [x[j] for x in candidates[i:i+batch_size]]
+                    batch_ref_candidates = ref_candidates[i:i+batch_size]
+                    batch_inputs = inputs[i:i+batch_size]
+                    batch_instructions = instructions[i:i+batch_size] if instructions is not None else None
+                    batch_logits = self.compare(batch_inputs, batch_ref_candidates, batch_candidates, instructions=batch_instructions, batch_size=batch_size, return_logits=True, **rank_kwargs, disable_tqdm=True)
+                    logits[i:i+batch_size, j] = batch_logits
+                    pbar.update(len(batch_candidates))
+        scores = -logits
+        if return_scores:
+            return scores
+        else:
+            ranks = get_ranks_from_scores(scores)
+            return ranks
     
     def compare_conversations(
         self,
@@ -465,6 +538,7 @@ class Blender:
         batch_size:int=4,
         return_logits:bool=False,
         mode:str="[A,B]+[B,A]",
+        disable_tqdm:bool=False
     ):
         """Compare candidates for each input
         Args:
@@ -508,7 +582,7 @@ class Blender:
             dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
             cmp_results = []
             with torch.no_grad():
-                for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=not self.blender_config.use_tqdm):
+                for batch in tqdm(iter(dataloader), desc="Ranking candidates", disable=(not self.blender_config.use_tqdm or disable_tqdm)):
                     batch = {k: v.to(self.ranker_config.device) for k, v in batch.items() if v is not None}
                     source_ids, source_attention_mask = batch['source_ids'], batch['source_attention_mask']
                     left_cand_ids, left_cand_attention_mask = batch['candidate_ids'][:, 0], batch['candidate_attention_mask'][:, 0]
@@ -527,7 +601,7 @@ class Blender:
             cmp_results = np.concatenate(cmp_results, axis=0)
         else:
             # other ranker type, simple rank
-            scores = self.rank(inputs, candidates, return_scores=True, instructions=instructions, batch_size=batch_size)
+            scores = self.rank(inputs, candidates, return_scores=True, instructions=instructions, batch_size=batch_size, disable_tqdm=disable_tqdm)
             cmp_results = scores[:, 0] - scores[:, 1]
         if return_logits:
             return cmp_results

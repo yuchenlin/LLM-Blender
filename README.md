@@ -163,8 +163,42 @@ Because they wanted someone who could communicate complex ideas without making a
 Our latest 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), which has been further trained on various high-quality and large-scale dataset with human preference annotations, 
 has shown great correlation with human preferences with an extremely small model size (0.4B), approaching the performance of GPT-4. (See detailed comparison in 🤗[PairRM](https://huggingface.co/llm-blender/PairRM))
 
-With a `blender.compare()` function, you could easily integrate PairRM to popular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index). 
-(please stay tuned)
+To get scalar rewards, you can use `blender.rank_with_ref` method (see the example below). This method compares all the candidates with the reference and returns the relative scalar rewards. 
+
+```python
+import llm_blender
+blender = llm_blender.Blender()
+blender.loadranker("llm-blender/PairRM") # load ranker checkpoint
+
+inputs = ["hello, how are you!", "I love you!"]
+candidates_texts = [["get out!", "hi! I am fine, thanks!", "bye!"], 
+    ["I love you too!", "I hate you!", "Thanks! You're a good guy!"]]
+rewards = blender.rank_with_ref(inputs, candidates_texts, return_scores=True, batch_size=2, mode="longest")
+print("Rewards for input 1:", rewards[0]) # rewards of candidates for input 1
+"""
+rewards is a List[List[float]] of shape (len(inputs), len(candidates_texts[0])).
+representing the rewards of each candidate for each input.
+By default, the rewards are calculated based on the the comparison with the longest generation as a reference.(mode="longest").
+other supported modes are "shortest" "median_length" "first" "last"
+"""
+```
+
+You can also pass a list of references to compare with, instead of automatically selecting one from the candidates as the fixed reference.
+
+```python
+ref_candidates = [_c[0] for _c in candidates_texts] # use the first candidate as the reference, same as mode="first"
+rewards = blender.rank_with_ref(inputs, candidates_texts, return_scores=True, batch_size=2, ref_candidates=ref_candidates) 
+"""
+ref_candidates = [ref1, ref2, ref3, ...] # ref_candidates is a List[str], shape (len(inputs),)
+this parameter will override the mode parameter, and use the ref_candidates as the reference for reward calculation.
+rewards is a List[List[float]] of shape (len(inputs), len(candidates_texts[0])).
+"""
+```
+
+You can easily integrate PairRM to popular RLHF toolkits like [trl](https://huggingface.co/docs/trl/index).
+
+### Use case 4: DPO (Direct Preference Optimization) with PairRM
+PairRM's `blender.compare` naturally supports DPO, which is a direct preference optimization method to optimize the model with the pairwise comparison signal. 
 
 
 ### Load PairRM with hugging face `from_pretrained()`
@@ -298,6 +332,14 @@ do_inference=True
 - 🤗[PairRanker checkpoint](https://huggingface.co/llm-blender/PairRM) fine-tuned on DeBERTa-v3-Large (304m)
 
 - 🤗[GenFuser checkpoint](https://huggingface.co/llm-blender/gen_fuser_3b) fine-tuned on Flan-T5-XL (3b)
+
+
+## PairRM Community 
+PairRM has been widely used in various applications, including but not limited to:
+- [snorkelai/Snorkel-Mistral-PairRM-DPO](https://huggingface.co/snorkelai/Snorkel-Mistral-PairRM-DPO) (SOTA in Alpaca-eval leaderboard)
+- [argilla/OpenHermesPreferences](https://huggingface.co/datasets/argilla/OpenHermesPreferences) (1M+ preference datasets annotated by PairRM)
+
+We are looking forward to more applications and contributions from the community 🤗!
 
 ## Star History
 

@@ -29,7 +29,7 @@ def init_llm_blender(device: torch.device) -> llm_blender.Blender:
 def get_responses_from_supported_model(
     prompt: list[dict[str, str]], args: argparse.Namespace
 ) -> list[list[str]]:
-    tpipe = TspPipeline(supported_model_list=supported_model)
+    tpipe = TspPipeline(supported_model_list=supported_model, args=args)
 
     total_responses = [[] for _ in range(len(prompt))]
 
@@ -78,9 +78,7 @@ def get_topk_candidates_and_fuse(
 if __name__ == "__main__":
     args = get_args()
     print("Starting LLM Blender...")
-    llm_blender = init_llm_blender()
-
-    args = argparse.Namespace()
+    llm_blender = init_llm_blender(device=torch.device("cuda" if args.cuda else "cpu"))
 
     input_session = PromptSession()
     while True:
@@ -95,6 +93,8 @@ if __name__ == "__main__":
             total_responses = get_responses_from_supported_model(
                 prompt=dict_input, args=args
             )
+
+            total_responses = [[cad['candidates'][0]['text'] for cad in res] for res in total_responses]
 
             total_ranks = get_ranks(
                 llm_blender=llm_blender,

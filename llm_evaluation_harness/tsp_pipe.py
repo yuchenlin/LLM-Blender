@@ -1,6 +1,6 @@
 # Generate summary candidates with the fine-tuned models.
 
-# python tsp_pipe.py --cache_dir ./cache --model THUDM/chatglm3-6b --decoding_method top_p_sampling
+# python -m llm_evaluation_harness.tsp_pipe --cache_dir ./cache --model THUDM/chatglm3-6b --decoding_method top_p_sampling
 # pip install git+https://github.com/yuchenlin/LLM-Blender.git einops
 import ctypes
 import gc
@@ -282,6 +282,7 @@ def main(args):
 
     print(">>>>>>>>>>>>>>>")
     print(result)
+    tsp_pipe.clean()
 
     print("Init all models")
     for idx, model in enumerate(supported_model):

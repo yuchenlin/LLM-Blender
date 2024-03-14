@@ -75,6 +75,31 @@ def get_topk_candidates_and_fuse(
     return fuse_generations
 
 
+def blender_pipe(prompt: list[dict[str, str]], args: argparse.Namespace) -> list[str]:
+    llm_blender = init_llm_blender(device=torch.device("cuda" if args.cuda else "cpu"))
+    
+    total_responses = get_responses_from_supported_model(
+        prompt=prompt, args=args
+    )
+
+    total_responses = [[cad['candidates'][0]['text'] for cad in res] for res in total_responses]
+
+    total_ranks = get_ranks(
+        llm_blender=llm_blender,
+        prompt=dict_input,
+        total_responses=total_responses,
+    )
+
+    total_result = get_topk_candidates_and_fuse(
+        llm_blender=llm_blender,
+        prompt=dict_input,
+        total_responses=total_responses,
+        ranks=total_ranks,
+        top_k=3,
+    )
+    return total_result
+
+
 if __name__ == "__main__":
     args = get_args()
     print("Starting LLM Blender...")
@@ -84,7 +109,7 @@ if __name__ == "__main__":
     while True:
         try:
             user_instruction = input_session.prompt("\n Instruction >> ")
-            user_input = input_session.prompt("\n Input       >> ")
+            user_input = input_session.prompt(" Input       >> ")
             if user_input == "":
                 print("\nInput cannot be empty\n")
                 continue

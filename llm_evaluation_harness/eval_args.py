@@ -8,7 +8,7 @@ from llm_blender.common.utils import (append_jsonl, empty2None, empty2Noneint,
                                       seed_everything, str2bool)
 
 
-def get_args() -> argparse.Namespace:
+def get_args(default:bool=False) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--seed", type=int, default=42)
@@ -36,7 +36,7 @@ def get_args() -> argparse.Namespace:
     parser.add_argument(
         "--decoding_method",
         type=str,
-        default="diverse_beam_search",
+        default="top_p_sampling",
         choices=[
             "beam_search",
             "diverse_beam_search",
@@ -71,7 +71,10 @@ def get_args() -> argparse.Namespace:
 
     parser.add_argument("--overwrite", type=str2bool, default=True)
 
-    args = parser.parse_args()
+    if default:
+        args = parser.parse_args([])
+    else:
+        args = parser.parse_args()
 
     if args.cache_dir is None:
         args.cache_dir = (

@@ -1,10 +1,12 @@
 import argparse
+import gc
 import os
 
 import torch
 from prompt_toolkit import PromptSession
 from tqdm import tqdm
 
+libc = ctypes.CDLL("libc.so.6")
 import llm_blender
 from llm_blender.blender.blender_utils import get_topk_candidates_from_ranks
 from llm_evaluation_harness.config import supported_model
@@ -98,6 +100,11 @@ def blender_pipe(prompt: list[dict[str, str]], args: argparse.Namespace) -> list
         ranks=total_ranks,
         top_k=3,
     )
+
+    del llm_blender
+    torch.cuda.empty_cache()
+    _ = gc.collect()
+    libc.malloc_trim(0)
     return total_result
 
 

@@ -209,7 +209,7 @@ class TspPipeline:
         assert model_id in self.supported_model_list, "model_id not supported"
 
         self.tokenizer = build_tokenizer(
-            model_id, cache_dir=args.cache_dir, trust_remote_code=True
+            model_id, cache_dir=self.args.cache_dir, trust_remote_code=True
         )
         self.args.stop_str, self.args.stop_token_ids = get_stop_str_and_ids(
             self.tokenizer
@@ -218,8 +218,8 @@ class TspPipeline:
         self.model = build_model(
             model_id,
             device_map="auto",
-            torch_dtype=get_torch_dtype(args.dtype),
-            cache_dir=args.cache_dir,
+            torch_dtype=get_torch_dtype(self.args.dtype),
+            cache_dir=self.args.cache_dir,
             trust_remote_code=True,
         )
 

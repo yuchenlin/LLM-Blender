@@ -76,13 +76,14 @@ def get_topk_candidates_and_fuse(
 
 
 def blender_pipe(prompt: list[dict[str, str]], args: argparse.Namespace) -> list[str]:
-    llm_blender = init_llm_blender(device=torch.device("cuda" if args.cuda else "cpu"))
-    
-    total_responses = get_responses_from_supported_model(
-        prompt=prompt, args=args
-    )
 
-    total_responses = [[cad['candidates'][0]['text'] for cad in res] for res in total_responses]
+    total_responses = get_responses_from_supported_model(prompt=prompt, args=args)
+
+    llm_blender = init_llm_blender(device=torch.device("cuda" if args.cuda else "cpu"))
+
+    total_responses = [
+        [cad["candidates"][0]["text"] for cad in res] for res in total_responses
+    ]
 
     total_ranks = get_ranks(
         llm_blender=llm_blender,
@@ -119,7 +120,9 @@ if __name__ == "__main__":
                 prompt=dict_input, args=args
             )
 
-            total_responses = [[cad['candidates'][0]['text'] for cad in res] for res in total_responses]
+            total_responses = [
+                [cad["candidates"][0]["text"] for cad in res] for res in total_responses
+            ]
 
             total_ranks = get_ranks(
                 llm_blender=llm_blender,

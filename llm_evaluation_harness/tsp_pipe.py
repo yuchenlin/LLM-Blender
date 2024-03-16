@@ -14,13 +14,27 @@ from fastchat.conversation import conv_templates, get_conv_template
 from tqdm import tqdm
 
 from llm_blender.candidates_generation.engine import beam_search_step
-from llm_blender.candidates_generation.generate_candidates import \
-    get_torch_dtype
 from llm_blender.candidates_generation.model_utils import (build_model,
                                                            build_tokenizer,
                                                            non_conv_models)
 from llm_evaluation_harness.config import supported_model
 from llm_evaluation_harness.eval_args import get_args
+
+
+def get_torch_dtype(dtype_str):
+    """
+    Get the torch dtype from a string
+    """
+    if dtype_str == "float32":
+        return torch.float32
+    elif dtype_str == "float16":
+        return torch.float16
+    elif dtype_str == "bfloat16":
+        return torch.bfloat16
+    elif dtype_str == "int8":
+        return torch.int8
+    else:
+        raise ValueError("Invalid dtype {}".format(dtype_str))
 
 
 def get_stop_str_and_ids(tokenizer):

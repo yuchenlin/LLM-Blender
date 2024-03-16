@@ -14,6 +14,8 @@ from fastchat.conversation import conv_templates, get_conv_template
 from tqdm import tqdm
 
 from llm_blender.candidates_generation.engine import beam_search_step
+from llm_blender.candidates_generation.generate_candidates import \
+    get_torch_dtype
 from llm_blender.candidates_generation.model_utils import (build_model,
                                                            build_tokenizer,
                                                            non_conv_models)
@@ -193,7 +195,7 @@ class TspPipeline:
         assert model_id in self.supported_model_list, "model_id not supported"
 
         self.tokenizer = build_tokenizer(
-            model_id, cache_dir="./cache", trust_remote_code=True
+            model_id, cache_dir=args.cache_dir, trust_remote_code=True
         )
         self.args.stop_str, self.args.stop_token_ids = get_stop_str_and_ids(
             self.tokenizer
@@ -202,8 +204,8 @@ class TspPipeline:
         self.model = build_model(
             model_id,
             device_map="auto",
-            torch_dtype=torch.float16,
-            cache_dir="./cache",
+            torch_dtype=get_torch_dtype(args.dtype),
+            cache_dir=args.cache_dir,
             trust_remote_code=True,
         )
 
@@ -272,21 +274,22 @@ class TspPipeline:
 def main(args):
     tsp_pipe = TspPipeline(supported_model, args)
 
-    result = tsp_pipe.chat(
-        model_id=args.model,
-        chat_msg=[
-            {"instruction": "You are a good teacher.", "input": "Why the sky is blue?"}
-        ],
-        args=args,
-    )
+    # result = tsp_pipe.chat(
+    #     model_id=args.model,
+    #     chat_msg=[
+    #         {"instruction": "You are a good teacher.", "input": "Why the sky is blue?"}
+    #     ],
+    #     args=args,
+    # )
 
-    print(">>>>>>>>>>>>>>>")
-    print(result)
-    tsp_pipe.clean()
+    # print(result)
+    # tsp_pipe.clean()
 
-    print("Init all models")
+    print("Init all models ...\n")
     for idx, model in enumerate(supported_model):
-        print(f"Loading model {idx+1}, total {len(supported_model)}")
+        print(
+            f">>>>> Loading model {model} (idx: {idx+1}, total {len(supported_model)}) <<<<<"
+        )
         tsp_pipe.load(model)
         result = tsp_pipe.chat(
             model_id=model,
@@ -298,7 +301,7 @@ def main(args):
             ],
             args=args,
         )
-        print(result)
+        print("Result >>> ", result)
         tsp_pipe.clean()
 
 

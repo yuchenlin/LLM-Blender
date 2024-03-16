@@ -76,10 +76,10 @@ def get_args(default:bool=False) -> argparse.Namespace:
     else:
         args = parser.parse_args()
 
-    if args.cache_dir is None:
-        args.cache_dir = (
-            Path(os.path.abspath(__file__)).parent.parent.parent / "hf_models"
-        )
+    # if args.cache_dir is None:
+    #     args.cache_dir = (
+    #         Path(os.path.abspath(__file__)).parent.parent.parent / "hf_models"
+    #     )
     logging.basicConfig(level=logging.INFO)
     logging.info("*" * 50)
     logging.info(args)

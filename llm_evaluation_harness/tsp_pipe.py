@@ -235,7 +235,9 @@ class TspPipeline:
             self.clean()
             self.load(model_id)
         dataset = GenerationDataset(self.tokenizer, chat_msg, prompt_max_length=512)
-        dataloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=False)
+        dataloader = torch.utils.data.DataLoader(
+            dataset, batch_size=args.batch_size, shuffle=False
+        )
 
         device = torch.device("cuda" if self.args.cuda else "cpu")
 

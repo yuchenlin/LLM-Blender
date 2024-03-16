@@ -8,7 +8,7 @@ from llm_blender.common.utils import (append_jsonl, empty2None, empty2Noneint,
                                       seed_everything, str2bool)
 
 
-def get_args(default:bool=False) -> argparse.Namespace:
+def get_args(default: bool = False) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--seed", type=int, default=42)
@@ -16,6 +16,7 @@ def get_args(default:bool=False) -> argparse.Namespace:
 
     # data
     parser.add_argument("--data_dir", type=str, default="../../data")
+    parser.add_argument("--batch_size", type=int, default=8)
     # parser.add_argument('--dataset', type = empty2None, required=True)
     parser.add_argument("--set", type=str, default="test")
     parser.add_argument("--max_size", type=int, default=None)

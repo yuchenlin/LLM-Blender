@@ -87,13 +87,13 @@ def blender_pipe(prompt: list[dict[str, str]], args: argparse.Namespace) -> list
 
     total_ranks = get_ranks(
         llm_blender=llm_blender,
-        prompt=dict_input,
+        prompt=prompt,
         total_responses=total_responses,
     )
 
     total_result = get_topk_candidates_and_fuse(
         llm_blender=llm_blender,
-        prompt=dict_input,
+        prompt=prompt,
         total_responses=total_responses,
         ranks=total_ranks,
         top_k=3,

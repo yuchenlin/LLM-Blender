@@ -39,7 +39,7 @@ class LlmBlender(LM):
         for request in tqdm([req.args for req in requests], disable=False):
             inp = request[0]
 
-            dict_input = [{"instruction": "", "input": inp}]
+            dict_input = [{"instruction": inp, "input": ""}]
             result = blender_pipe(dict_input, self.default_args)
             res.append(result[0])
         

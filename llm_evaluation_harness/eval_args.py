@@ -17,6 +17,7 @@ def get_args(default: bool = False) -> argparse.Namespace:
     # data
     parser.add_argument("--data_dir", type=str, default="../../data")
     parser.add_argument("--batch_size", type=int, default=8)
+    parser.add_argument("--batch_size_map_from_config", type=str2bool, default=True)
     # parser.add_argument('--dataset', type = empty2None, required=True)
     parser.add_argument("--set", type=str, default="test")
     parser.add_argument("--max_size", type=int, default=None)

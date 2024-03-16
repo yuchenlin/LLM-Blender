@@ -17,7 +17,7 @@ from llm_blender.candidates_generation.engine import beam_search_step
 from llm_blender.candidates_generation.model_utils import (build_model,
                                                            build_tokenizer,
                                                            non_conv_models)
-from llm_evaluation_harness.config import supported_model
+from llm_evaluation_harness.config import batch_size_map, supported_model
 from llm_evaluation_harness.eval_args import get_args
 
 
@@ -234,6 +234,10 @@ class TspPipeline:
         elif self.locked_model != model_id:
             self.clean()
             self.load(model_id)
+
+        if args.batch_size_map_from_config:
+            args.batch_size = batch_size_map.get(model_id, 4)
+
         dataset = GenerationDataset(self.tokenizer, chat_msg, prompt_max_length=512)
         dataloader = torch.utils.data.DataLoader(
             dataset, batch_size=args.batch_size, shuffle=False
@@ -246,7 +250,7 @@ class TspPipeline:
             for idx, batch in tqdm(
                 enumerate(dataloader),
                 total=len(dataloader),
-                desc="Generating candidates",
+                desc=f"Generating candidates with model {model_id}",
             ):
                 for k in batch["encodings"].keys():
                     batch["encodings"][k] = batch["encodings"][k].to(device)

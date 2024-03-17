@@ -14,11 +14,9 @@ import torch
 from fastchat.conversation import conv_templates, get_conv_template
 from tqdm import tqdm
 
-from llm_blender.candidates_generation.model_utils import (
-    build_model,
-    build_tokenizer,
-    non_conv_models,
-)
+from llm_blender.candidates_generation.model_utils import (build_model,
+                                                           build_tokenizer,
+                                                           non_conv_models)
 from llm_evaluation_harness.config import batch_size_map, supported_model
 from llm_evaluation_harness.engine import beam_search_step
 from llm_evaluation_harness.eval_args import get_args
@@ -159,6 +157,9 @@ class GenerationDataset(torch.utils.data.Dataset):
                 final_prompt = f"### Instruction:\n${item['instruction']}\n### Input:\n${item['input']}\n### Response:"
             else:
                 final_prompt = f"### Instruction:\n${item['instruction'] + item['input']}\n### Response:"
+        elif "mistral" in self.tokenizer.name_or_path.lower():
+            # final_prompt = f"<s> [INST] {prompt} [/INST]"
+            final_prompt = f"{prompt}"
         elif any(
             [
                 non_conv_model in self.tokenizer.name_or_path.lower()
@@ -220,8 +221,8 @@ class TspPipeline:
         self.tokenizer = build_tokenizer(
             model_id, cache_dir=self.args.cache_dir, trust_remote_code=True
         )
-        self.args.stop_str, self.args.stop_token_ids, args.extend_stop_str = (
-            get_stop_str_and_ids(self.tokenizer, untils_list)
+        self.args.stop_str, self.args.stop_token_ids, self.args.extend_stop_str = get_stop_str_and_ids(
+            self.tokenizer, untils_list
         )
 
         self.model = build_model(
@@ -322,31 +323,7 @@ def main(args):
     # print(result)
     # tsp_pipe.clean()
 
-    example = """The following are multiple choice questions (with answers) about high school chemistry.
-
-    Q: A new compound is synthesized and found to be a monoprotic acid with a molar mass of 248 g/mol. When 0.0050 mol of this acid are dissolved in 0.500 L of water, the pH is measured as 3.89. What is the pKa of this acid?
-    (A) 3.89 (B) 7.78 (C) 5.78 (D) 2.33
-    A:  (C)
-
-    Q: Which of the following is considered an acid anhydride?
-    (A) HCl (B) H2SO3 (C) SO2 (D) Al(NO3)3
-    A:  (C)
-
-    Q: A solution contains 2.00 mole of acetic acid, CH3COOH, and 1.00 mole of calcium acetate, Ca(CH3COO)2. The solution is able to resist the addition of a small amount of strong acid or strong base with only minor changes in the pH of the solution. Larger quantities of strong acid or strong base can cause a significant change in pH. How many moles of nitric acid, HNO3, may be added before the pH begins to change significantly?
-    (A) 0.500 mole (B) 1.00 mole (C) 2.00 mole (D) 3.00 mole
-    A:  (C)
-
-    Q: From the solubility rules, which of the following is true?
-    (A) All chlorides, bromides, and iodides are soluble (B) All sulfates are soluble (C) All hydroxides are soluble (D) All ammonium-containing compounds are soluble
-    A:  (D)
-
-    Q: Which of the following is expected to be a polar molecule?
-    (A) PCl4F (B) BF3 (C) CO2 (D) Si(CH3)4
-    A:  (A)
-
-    Q: London dispersion forces are caused by
-    (A) temporary dipoles created by the position of electrons around the nuclei in a molecule (B) the three-dimensional intermolecular bonding present in all covalent substances (C) the uneven electron-to-proton ratio found on individual atoms of a molecule (D) the electronegativity differences between the different atoms in a molecule
-    A:"""
+    example = 'The following are multiple choice questions (with answers) about high school computer science.\n\nQ: A list of numbers has n elements, indexed from 1 to n. The following algorithm is intended to display the number of elements in the list that have a value greater than 100. The algorithm uses the variables count and position. Steps 3 and 4 are missing.\n Step 1: Set count to 0 and position to 1.\n Step 2: If the value of the element at index position is greater\n than 100, increase the value of count by 1.\n Step 3: (missing step)\n Step 4: (missing step)\n Step 5: Display the value of count.\n Which of the following could be used to replace steps 3 and 4 so that the algorithm works as intended?\n(A) Step 3: Increase the value of position by 1.\n Step 4: Repeat steps 2 and 3 until the value of count is greater than 100. (B) Step 3: Increase the value of position by 1.\n Step 4: Repeat steps 2 and 3 until t he value of position is greater than n. (C) Step 3: Repeat step 2 until the value of count is greater than 100.\n Step 4: Increase the value of position by 1. (D) Step 3: Repeat step 2 until the value of position is greater than n.\n Step 4: Increase the value of count by 1.\nA:  (D)\n\nQ: Many Web browsers allow users to open anonymous windows. During a browsing session in an anonymous window, the browser does not record a browsing history or a list of downloaded files. When the anonymous window is exited, cookies created during the session are deleted. Which of the following statements about browsing sessions in an anonymous window is true?\n(A) The activities of a user browsing in an anonymous window will not be visible to people who monitor the user\'s network, such as the system administrator. (B) Items placed in a Web store\'s shopping cart for future purchase during the anonymous browsing session will not be saved on the user\'s computer. (C) A user will not be able to log in to e-mail or social media accounts during the anonymous browsing session. (D) A user browsing in an anonymous window will be protected from viruses launched from any web sites visited or files downloaded.\nA:  (B)\n\nQ: In the program below, the initial value of x is 5 and the initial value of y is 10.\n IF (X < O)\n {\n DISPLAY ("Foxtrot")\n }\n ELSE\n {\n IF (X > y)\n {\n   DISPLAY ("Hotel")\n }\n ELSE \n {\n   IF (y > O)\n   {\n   DISPLAY ("November")\n   }\n   ELSE\n   {\n   DISPLAY ("Yankee")\n   }\n }\n }\n \n What is displayed as a result of running the program?\n(A) Foxtrot (B) Hotel (C) November (D) Yankee\nA:  (C)\n\nQ: What is the output of "abc"[::-1] in Python 3?\n(A) Error (B) abc (C) cba (D) c\nA:  (C)\n\nQ: Which of the following is an example of the use of a device on the Internet of Things (IoT) ?\n(A) A car alerts a driver that it is about to hit an object. (B) A hiker uses a G P S watch to keep track of her position. (C) A refrigerator orders milk from an online delivery service when the milk in the refrigerator is almost gone. (D) A runner uses a watch with optical sensors to monitor his heart rate.\nA:  (C)\n\nQ: Two lists, list1 and list2, contain the names of books found in two different collections. A librarian wants to create newList, which will contain the names of all books found in either list, in alphabetical order, with duplicate entries removed.\n\n For example, if 1istl contains\n ["Macbeth", "Frankenstein", "Jane Eyre"]\n and 1ist2 contains\n ["Frankenstein", "Dracula, "Macbeth", "Hamlet"],\n then newList will contain\n ["Dracula", "Frankenstein", "Hamlet", "Jane Eyre", "Macbeth"].\n\n The following procedures are available to create newList.\n Procedure\n Explanation\n Sort (list)\n Sorts list in alphabetical order and returns the resulting list.\n Combine (listl, list2)\n Creates a new list consisting of the entries from\n list1 followed by the entries from list2. The resulting list is returned.\n RemoveDuplicates (list)\n Iterates through list. If any two or more entries have the same value, the duplicate entries are removed so that any entry appears at most once. The resulting list is returned.\n\n Which of the following code segments will correctly create newList?\n(A) newList ← Combine (listl, list2)\n newList ← Sort (newList)\n newList ← RemoveDup1icates (newList) (B) listl ← Sort (listl)\n list2 ← Sort (list2)\n newList ← Combine (listl, list2)\n newList ← RemoveDuplicates (newList) (C) listl ← RemoveDuplicates (listl)\n list2 ← RemoveDuplicates (list2)\n newList ← Combine (listl, 1ist2)\n newList ← Sort (newList) (D) listl ← RemoveDuplicates (listl)\n listl ← Sort (listl)\n list2 ← RemoveDuplicates (list2)\n 1ist2 ← Sort (list2)\n newList ← Combine (listl, list2)\nA: '
 
     total_time = 0
     print("Init all models ...\n")

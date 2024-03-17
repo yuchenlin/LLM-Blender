@@ -29,11 +29,23 @@ class LlmBlender(LM):
         self.default_args = get_args(default=True)
 
     def get_batched_requests(self, requests, batch_size: int = 64):
-        inp_list = [request[0] for request in [req.args for req in requests]]
+        inp_list = []
+        untils = []
+        for request in [req.args for req in requests]:
+            inp_list.append(request[0])
+            untils.extend(request[1]['until'])
+        
         batch_size = int(batch_size)
         num_batches = (len(inp_list) + batch_size - 1) // batch_size
-        return [list(sub_arr) for sub_arr in np.array_split(inp_list, num_batches)]
 
+        untils = list(set(untils))
+        print(f"{untils=}")
+        return [
+            list(sub_arr)
+            for sub_arr in np.array_split(
+                inp_list, num_batches
+            )
+        ], untils
     def loglikelihood(self, requests) -> list[tuple[float, bool]]:
         pass
 
@@ -44,7 +56,7 @@ class LlmBlender(LM):
         if not requests:
             return []
 
-        requests_str_batch = self.get_batched_requests(
+        requests_str_batch, untils = self.get_batched_requests(
             requests=requests, batch_size=self.batch_size
         )
         print(
@@ -54,7 +66,7 @@ class LlmBlender(LM):
         res = []
         for request_list in tqdm(requests_str_batch, disable=False):
             dict_input = [{"instruction": inp, "input": ""} for inp in request_list]
-            result = blender_pipe(dict_input, self.default_args)
+            result = blender_pipe(dict_input, untils, self.default_args)
             res.extend(result)
 
         return res

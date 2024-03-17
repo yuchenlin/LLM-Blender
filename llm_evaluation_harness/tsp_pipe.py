@@ -4,6 +4,7 @@
 # pip install git+https://github.com/yuchenlin/LLM-Blender.git einops
 import ctypes
 import gc
+import time
 
 libc = ctypes.CDLL("libc.so.6")
 import argparse
@@ -223,6 +224,8 @@ class TspPipeline:
             trust_remote_code=True,
         )
 
+        self.model.use_cache = True
+
         self.locked_model = model_id
 
     def chat(self, model_id: str, chat_msg: list[dict[str, str]], args) -> list[str]:
@@ -304,13 +307,14 @@ def main(args):
 
     # print(result)
     # tsp_pipe.clean()
-
+    total_time = 0
     print("Init all models ...\n")
     for idx, model in enumerate(supported_model):
         print(
             f">>>>> Loading model {model} (idx: {idx+1}, total {len(supported_model)}) <<<<<"
         )
         tsp_pipe.load(model)
+        time_ =  time.time()
         result = tsp_pipe.chat(
             model_id=model,
             chat_msg=[
@@ -322,7 +326,9 @@ def main(args):
             args=args,
         )
         print("Result >>> ", result)
+        total_time += time.time()-time_
         tsp_pipe.clean()
+    print(f"{total_time=}")
 
 
 if __name__ == "__main__":

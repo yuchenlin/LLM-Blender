@@ -8,8 +8,8 @@ supported_model = [
     "TheBloke/koala-13B-HF",
     "project-baize/baize-v2-13b",
     "google/flan-t5-xxl",
-    "THUDM/chatglm-6b", # x
-    "fnlp/moss-moon-003-sft", # x
+    # "THUDM/chatglm-6b", # x
+    # "fnlp/moss-moon-003-sft", # x
 
     "mosaicml/mpt-7b-chat",
     # "TheBloke/guanaco-13B-HF",
@@ -19,19 +19,19 @@ supported_model = [
 ]
 
 batch_size_map = {
-    "chavinlo/alpaca-13b": 4,
-    "eachadea/vicuna-13b-1.1": 4,
-    "databricks/dolly-v2-12b": 4,
+    "chavinlo/alpaca-13b": 6,
+    "eachadea/vicuna-13b-1.1": 6,
+    "databricks/dolly-v2-12b": 6,
     "stabilityai/stablelm-tuned-alpha-7b": 12,
-    "OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5": 4,
-    "TheBloke/koala-13B-HF": 4,
-    "project-baize/baize-v2-13b": 4,
-    "google/flan-t5-xxl": 4,  # 11.3 B
+    "OpenAssistant/oasst-sft-4-pythia-12b-epoch-3.5": 6,
+    "TheBloke/koala-13B-HF": 6,
+    "project-baize/baize-v2-13b": 6,
+    "google/flan-t5-xxl": 6,  # 11.3 B
     "THUDM/chatglm-6b": 12,
-    "fnlp/moss-moon-003-sft": 4,
+    "fnlp/moss-moon-003-sft": 6,
     "mosaicml/mpt-7b-chat": 12,
-    "TheBloke/guanaco-13B-HF": 4,
-    "NousResearch/Nous-Hermes-13b": 4,
-    "ehartford/WizardLM-13B-Uncensored": 4,
-    "jondurbin/airoboros-13b": 4,
+    "TheBloke/guanaco-13B-HF": 6,
+    "NousResearch/Nous-Hermes-13b": 6,
+    "ehartford/WizardLM-13B-Uncensored": 6,
+    "jondurbin/airoboros-13b": 6,
 }

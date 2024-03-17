@@ -105,9 +105,9 @@ def beam_search_step(input_ids, attention_mask, tokenizer, base_model, args, **k
     #         StopTokenIdsCriteria(args.stop_token_ids),
     #     ])
 
-    if hasattr(args, "stop_str") and args.stop_str:
+    if hasattr(args, "extend_stop_str") and args.extend_stop_str:
         kwargs["stopping_criteria"] = stop_sequences_criteria(
-            tokenizer, args.stop_str, input_ids.shape[1], input_ids.shape[0]
+            tokenizer, args.extend_stop_str, input_ids.shape[1], input_ids.shape[0]
         )
 
     # 1 - beam search

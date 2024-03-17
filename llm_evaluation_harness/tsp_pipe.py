@@ -95,11 +95,11 @@ def get_stop_str_and_ids(tokenizer, untils_list: list[str]):
         )
     )
     if untils_list:
-        stop_str = untils_list.expand(stop_str)
-        stop_str = list(set(stop_str))
-        print("Extend Stop string: {}".format(stop_str))
+        untils_list.extend(stop_str)
+        extend_stop_str = list(set(untils_list))
+        print("Extend Stop string: {}".format(extend_stop_str))
 
-    return stop_str, stop_token_ids
+    return stop_str, stop_token_ids, extend_stop_str
 
 
 def get_model_size(n_param):
@@ -217,7 +217,7 @@ class TspPipeline:
         self.tokenizer = build_tokenizer(
             model_id, cache_dir=self.args.cache_dir, trust_remote_code=True
         )
-        self.args.stop_str, self.args.stop_token_ids = get_stop_str_and_ids(
+        self.args.stop_str, self.args.stop_token_ids, args.extend_stop_str = get_stop_str_and_ids(
             self.tokenizer, untils_list
         )
 
@@ -361,6 +361,7 @@ def main(args):
                     "input": "Why the sky is blue?",
                 }
             ],
+            untils_list=["</s>", "Q:", "<|im_end|>"],
             args=args,
         )
         print("Result >>> ", result)

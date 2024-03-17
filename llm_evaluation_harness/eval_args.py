@@ -47,9 +47,9 @@ def get_args(default: bool = False) -> argparse.Namespace:
         ],
     )
     parser.add_argument("--num_return_sequences", type=int, default=1)
-    parser.add_argument("--num_beams", type=int, default=2)  # for beam search
+    parser.add_argument("--num_beams", type=int, default=1)  # for beam search
     parser.add_argument(
-        "--num_beam_groups", type=int, default=2
+        "--num_beam_groups", type=int, default=1
     )  # for diverse beam search
     parser.add_argument(
         "--diversity_penalty", type=float, default=1.0
@@ -57,13 +57,13 @@ def get_args(default: bool = False) -> argparse.Namespace:
     parser.add_argument("--top_p", type=float, default=1.0)  # for top-p sampling
     parser.add_argument("--top_k", type=int, default=50)  # for top-k sampling
     parser.add_argument(
-        "--temperature", type=float, default=1.0
+        "--temperature", type=float, default=0.7
     )  # for top-p and top-k sampling
     parser.add_argument("--stemmer", type=str2bool, default=True)
 
     # generation config
-    parser.add_argument("--prompt_max_length", type=int, default=512)
-    parser.add_argument("--output_max_length", type=int, default=512)
+    parser.add_argument("--prompt_max_length", type=int, default=256)
+    parser.add_argument("--output_max_length", type=int, default=256)
     parser.add_argument("--length_penalty", type=float, default=1.0)
     parser.add_argument("--repetition_penalty", type=float, default=1.0)
     parser.add_argument("--no_repeat_ngram_size", type=int, default=0)

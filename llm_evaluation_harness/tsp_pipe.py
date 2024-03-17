@@ -14,11 +14,11 @@ import torch
 from fastchat.conversation import conv_templates, get_conv_template
 from tqdm import tqdm
 
-from llm_blender.candidates_generation.engine import beam_search_step
 from llm_blender.candidates_generation.model_utils import (build_model,
                                                            build_tokenizer,
                                                            non_conv_models)
 from llm_evaluation_harness.config import batch_size_map, supported_model
+from llm_evaluation_harness.engine import beam_search_step
 from llm_evaluation_harness.eval_args import get_args
 
 
@@ -38,7 +38,7 @@ def get_torch_dtype(dtype_str):
         raise ValueError("Invalid dtype {}".format(dtype_str))
 
 
-def get_stop_str_and_ids(tokenizer):
+def get_stop_str_and_ids(tokenizer, untils_list: list[str]):
     """
     Get the stop string for the model
     """
@@ -94,6 +94,11 @@ def get_stop_str_and_ids(tokenizer):
             tokenizer.convert_ids_to_tokens(stop_token_ids) if stop_token_ids else None
         )
     )
+    if untils_list:
+        stop_str = untils_list.expand(stop_str)
+        stop_str = list(set(stop_str))
+        print("Extend Stop string: {}".format(stop_str))
+
     return stop_str, stop_token_ids
 
 
@@ -203,7 +208,7 @@ class TspPipeline:
         self.model = None
         self.tokenizer = None
 
-    def load(self, model_id: str):
+    def load(self, model_id: str, untils_list: list[str]):
         assert (
             self.locked_model == ""
         ), "The locked_model should be empty, run clean() first."
@@ -213,7 +218,7 @@ class TspPipeline:
             model_id, cache_dir=self.args.cache_dir, trust_remote_code=True
         )
         self.args.stop_str, self.args.stop_token_ids = get_stop_str_and_ids(
-            self.tokenizer
+            self.tokenizer, untils_list
         )
 
         self.model = build_model(
@@ -228,15 +233,21 @@ class TspPipeline:
 
         self.locked_model = model_id
 
-    def chat(self, model_id: str, chat_msg: list[dict[str, str]], args) -> list[str]:
+    def chat(
+        self,
+        model_id: str,
+        chat_msg: list[dict[str, str]],
+        untils_list: list[str],
+        args,
+    ) -> list[str]:
         # chat_msg = [{"instruction":"...", "input":"..."}]
 
         if not self.locked_model:
             self.clean()
-            self.load(model_id)
+            self.load(model_id, untils_list)
         elif self.locked_model != model_id:
             self.clean()
-            self.load(model_id)
+            self.load(model_id, untils_list)
 
         if args.batch_size_map_from_config:
             args.batch_size = batch_size_map.get(model_id, 4)
@@ -307,14 +318,41 @@ def main(args):
 
     # print(result)
     # tsp_pipe.clean()
+
+    example = """The following are multiple choice questions (with answers) about high school chemistry.
+
+    Q: A new compound is synthesized and found to be a monoprotic acid with a molar mass of 248 g/mol. When 0.0050 mol of this acid are dissolved in 0.500 L of water, the pH is measured as 3.89. What is the pKa of this acid?
+    (A) 3.89 (B) 7.78 (C) 5.78 (D) 2.33
+    A:  (C)
+
+    Q: Which of the following is considered an acid anhydride?
+    (A) HCl (B) H2SO3 (C) SO2 (D) Al(NO3)3
+    A:  (C)
+
+    Q: A solution contains 2.00 mole of acetic acid, CH3COOH, and 1.00 mole of calcium acetate, Ca(CH3COO)2. The solution is able to resist the addition of a small amount of strong acid or strong base with only minor changes in the pH of the solution. Larger quantities of strong acid or strong base can cause a significant change in pH. How many moles of nitric acid, HNO3, may be added before the pH begins to change significantly?
+    (A) 0.500 mole (B) 1.00 mole (C) 2.00 mole (D) 3.00 mole
+    A:  (C)
+
+    Q: From the solubility rules, which of the following is true?
+    (A) All chlorides, bromides, and iodides are soluble (B) All sulfates are soluble (C) All hydroxides are soluble (D) All ammonium-containing compounds are soluble
+    A:  (D)
+
+    Q: Which of the following is expected to be a polar molecule?
+    (A) PCl4F (B) BF3 (C) CO2 (D) Si(CH3)4
+    A:  (A)
+
+    Q: London dispersion forces are caused by
+    (A) temporary dipoles created by the position of electrons around the nuclei in a molecule (B) the three-dimensional intermolecular bonding present in all covalent substances (C) the uneven electron-to-proton ratio found on individual atoms of a molecule (D) the electronegativity differences between the different atoms in a molecule
+    A:"""
+
     total_time = 0
     print("Init all models ...\n")
     for idx, model in enumerate(supported_model):
         print(
             f">>>>> Loading model {model} (idx: {idx+1}, total {len(supported_model)}) <<<<<"
         )
-        tsp_pipe.load(model)
-        time_ =  time.time()
+        tsp_pipe.load(model, ["</s>", "Q:", "<|im_end|>"])
+        time_ = time.time()
         result = tsp_pipe.chat(
             model_id=model,
             chat_msg=[
@@ -326,7 +364,7 @@ def main(args):
             args=args,
         )
         print("Result >>> ", result)
-        total_time += time.time()-time_
+        total_time += time.time() - time_
         tsp_pipe.clean()
     print(f"{total_time=}")
 

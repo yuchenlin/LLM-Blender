@@ -14,9 +14,11 @@ import torch
 from fastchat.conversation import conv_templates, get_conv_template
 from tqdm import tqdm
 
-from llm_blender.candidates_generation.model_utils import (build_model,
-                                                           build_tokenizer,
-                                                           non_conv_models)
+from llm_blender.candidates_generation.model_utils import (
+    build_model,
+    build_tokenizer,
+    non_conv_models,
+)
 from llm_evaluation_harness.config import batch_size_map, supported_model
 from llm_evaluation_harness.engine import beam_search_step
 from llm_evaluation_harness.eval_args import get_args
@@ -94,8 +96,9 @@ def get_stop_str_and_ids(tokenizer, untils_list: list[str]):
             tokenizer.convert_ids_to_tokens(stop_token_ids) if stop_token_ids else None
         )
     )
+    extend_stop_str = None
     if untils_list:
-        untils_list.extend(stop_str)
+        untils_list.append(stop_str)
         extend_stop_str = list(set(untils_list))
         print("Extend Stop string: {}".format(extend_stop_str))
 
@@ -217,8 +220,8 @@ class TspPipeline:
         self.tokenizer = build_tokenizer(
             model_id, cache_dir=self.args.cache_dir, trust_remote_code=True
         )
-        self.args.stop_str, self.args.stop_token_ids, args.extend_stop_str = get_stop_str_and_ids(
-            self.tokenizer, untils_list
+        self.args.stop_str, self.args.stop_token_ids, args.extend_stop_str = (
+            get_stop_str_and_ids(self.tokenizer, untils_list)
         )
 
         self.model = build_model(
@@ -351,17 +354,17 @@ def main(args):
         print(
             f">>>>> Loading model {model} (idx: {idx+1}, total {len(supported_model)}) <<<<<"
         )
-        tsp_pipe.load(model, ["</s>", "Q:", "<|im_end|>"])
+        tsp_pipe.load(model, ["</s>", "Q:", "<|im_end|>", "###"])
         time_ = time.time()
         result = tsp_pipe.chat(
             model_id=model,
             chat_msg=[
                 {
-                    "instruction": "You are a good teacher.",
-                    "input": "Why the sky is blue?",
+                    "instruction": example,
+                    "input": "",
                 }
             ],
-            untils_list=["</s>", "Q:", "<|im_end|>"],
+            untils_list=["</s>", "Q:", "<|im_end|>", "###"],
             args=args,
         )
         print("Result >>> ", result)

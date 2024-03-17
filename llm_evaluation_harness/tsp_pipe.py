@@ -94,9 +94,12 @@ def get_stop_str_and_ids(tokenizer, untils_list: list[str]):
             tokenizer.convert_ids_to_tokens(stop_token_ids) if stop_token_ids else None
         )
     )
-    extend_stop_str = None
+    eextend_stop_str = []
     if untils_list:
         untils_list.append(stop_str)
+        if "vicuna" in name_or_path:
+            untils_list.append("###")
+            untils_list.append("Q:")
         extend_stop_str = list(set(untils_list))
         print("Extend Stop string: {}".format(extend_stop_str))
 

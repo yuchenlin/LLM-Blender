@@ -63,28 +63,6 @@ pip install transformers==4.33.2
 cd LLM-Blender-harness
 python -m llm_evaluation_harness.tsp_pipe
 
-python -m lm_eval \
-    --model llm_blender \
-    --tasks mmlu_abstract_algebra \
-    --device cuda:0 \
-    --batch_size 4 \
-    --output_path output/LlmBlender \
-    --limit 10 \
-    --log_samples
-
-
-lm_eval \
-    --model llm_blender \
-    --tasks hellaswag \
-    --device cuda:0 \
-    --batch_size 8 \
-    --log_samples \
-    --output_path output/gpt-j-6B
-
-
-lm_eval --model llm_blender \
-    --tasks openbookqa \
-    --device cuda:0
 
 lm_eval --model hf \
     --model_args pretrained=mistralai/Mistral-7B-Instruct-v0.1 \

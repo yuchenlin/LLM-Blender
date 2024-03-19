@@ -79,7 +79,7 @@ def get_topk_candidates_and_fuse(
     topk_candidates = get_topk_candidates_from_ranks(
         ranks, candidates_texts, top_k=top_k
     )
-
+    untils_list.append(")")
     fuse_generations = llm_blender.fuse(
         inputs, topk_candidates, instructions=insts, batch_size=32, stop_sequences=untils_list,
     )

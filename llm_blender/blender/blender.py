@@ -654,13 +654,14 @@ class Blender:
             batch['attention_mask'] = batch['attention_mask'][:, keep_column_mask]
 
             if stop_sequences:
-                generate_params.update(
-                    dictstopping_criteria=stop_sequences_criteria(
+                generate_params.update(dict(
+                    stopping_criteria=stop_sequences_criteria(
                         tokenizer=self.fuser_tokenizer,
                         stop_sequences=stop_sequences,
                         initial_decoder_input_length=batch['input_ids'].shape[1],
                         batch_size=batch['input_ids'].shape[0]
-                    ))
+                    )
+                ))
             
             output_ids = self.fuser.generate(**batch, **generate_params)
             _generations = self.fuser_tokenizer.batch_decode(output_ids, skip_special_tokens=True)

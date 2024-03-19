@@ -87,6 +87,7 @@ def get_topk_candidates_and_fuse(
 
 
 def blender_pipe(prompt: list[dict[str, str]], untils_list:list[str], args: argparse.Namespace) -> list[str]:
+    untils_list.extend(["(A)", "(B)", "(C)", "(D)", "(E)"])
 
     total_responses = get_responses_from_supported_model(prompt=prompt, untils_list=untils_list, args=args)
 

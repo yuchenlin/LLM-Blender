@@ -97,7 +97,6 @@ def get_stop_str_and_ids(tokenizer, untils_list: list[str]):
     extend_stop_str = []
     if untils_list:
         untils_list.append(stop_str)
-        untils_list.append(")")
         extend_stop_str = list(set(untils_list))
         print("Extend Stop string: {}".format(extend_stop_str))
 

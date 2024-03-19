@@ -27,6 +27,7 @@ from .config import BlenderConfig
 from huggingface_hub import snapshot_download
 from transformers.utils.hub import TRANSFORMERS_CACHE
 from tqdm import tqdm
+from llm_evaluation_harness.engine import stop_sequences_criteria
 
 # detect if vllm is installed
 try:
@@ -614,6 +615,7 @@ class Blender:
         candidates:List[List[str]], 
         instructions:List[str]=None, 
         batch_size:int=4,
+        stop_sequences:list[str]=[],
         **generate_kwargs
     ):
         """Fuse candidates for each input
@@ -639,6 +641,7 @@ class Blender:
             "max_new_tokens": candidate_maxlength,
             "num_beams": 4,
             "num_return_sequences": 1,
+            "use_cache": True,
         }
         if generate_kwargs:
             generate_params.update(generate_kwargs)
@@ -649,6 +652,16 @@ class Blender:
             keep_column_mask = batch['attention_mask'].ne(0).any(dim=0)
             batch['input_ids'] = batch['input_ids'][:, keep_column_mask]
             batch['attention_mask'] = batch['attention_mask'][:, keep_column_mask]
+
+            if stop_sequences:
+                generate_params.update(
+                    dictstopping_criteria=stop_sequences_criteria(
+                        tokenizer=self.fuser_tokenizer,
+                        stop_sequences=stop_sequences,
+                        initial_decoder_input_length=batch['input_ids'].shape[1],
+                        batch_size=batch['input_ids'].shape[0]
+                    ))
+            
             output_ids = self.fuser.generate(**batch, **generate_params)
             _generations = self.fuser_tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             generations.extend(_generations)

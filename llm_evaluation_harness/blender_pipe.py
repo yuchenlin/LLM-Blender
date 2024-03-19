@@ -10,10 +10,15 @@ from tqdm import tqdm
 libc = ctypes.CDLL("libc.so.6")
 import llm_blender
 from llm_blender.blender.blender_utils import get_topk_candidates_from_ranks
-
 from llm_evaluation_harness.config import supported_model
 from llm_evaluation_harness.eval_args import get_args
 from llm_evaluation_harness.tsp_pipe import TspPipeline
+
+from llm_evaluation_harness.engine import stop_sequences_criteria
+
+from llm_blender.blender.blender_utils import (
+    GenFuserDataset
+)
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
@@ -27,12 +32,11 @@ def init_llm_blender(device: torch.device) -> llm_blender.Blender:
     blender.loadfuser(
         "llm-blender/gen_fuser_3b"
     )  # load fuser checkpoint if you want to use pre-trained fuser; or you can use ranker only
-    blender.fuser.generation_config.use_cache = True
     return blender
 
 
 def get_responses_from_supported_model(
-    prompt: list[dict[str, str]], untils_list: list[str], args: argparse.Namespace
+    prompt: list[dict[str, str]], untils_list:list[str], args: argparse.Namespace
 ) -> list[list[str]]:
     tpipe = TspPipeline(supported_model_list=supported_model, args=args)
 
@@ -40,9 +44,7 @@ def get_responses_from_supported_model(
 
     for model_name in tqdm(supported_model):
         tpipe.clean()
-        response = tpipe.chat(
-            model_id=model_name, chat_msg=prompt, untils_list=untils_list, args=args
-        )
+        response = tpipe.chat(model_id=model_name, chat_msg=prompt, untils_list=untils_list, args=args)
         for i, r in enumerate(response):
             total_responses[i].append(r)
 
@@ -68,6 +70,7 @@ def get_topk_candidates_and_fuse(
     prompt: list[dict[str, str]],
     total_responses: list[list[str]],
     ranks: list[list[int]],
+    untils_list: list[str]=[],
     top_k: int = 3,
 ) -> list[list[str]]:
     insts = [x["instruction"] for x in prompt]
@@ -76,19 +79,16 @@ def get_topk_candidates_and_fuse(
     topk_candidates = get_topk_candidates_from_ranks(
         ranks, candidates_texts, top_k=top_k
     )
+
     fuse_generations = llm_blender.fuse(
-        inputs, topk_candidates, instructions=insts, batch_size=32
+        inputs, topk_candidates, instructions=insts, batch_size=32, stop_sequences=untils_list, generate_kwargs=generate_kwargs,
     )
     return fuse_generations
 
 
-def blender_pipe(
-    prompt: list[dict[str, str]], untils_list: list[str], args: argparse.Namespace
-) -> list[str]:
+def blender_pipe(prompt: list[dict[str, str]], untils_list:list[str], args: argparse.Namespace) -> list[str]:
 
-    total_responses = get_responses_from_supported_model(
-        prompt=prompt, untils_list=untils_list, args=args
-    )
+    total_responses = get_responses_from_supported_model(prompt=prompt, untils_list=untils_list, args=args)
 
     llm_blender = init_llm_blender(device=torch.device("cuda" if args.cuda else "cpu"))
 
@@ -108,6 +108,7 @@ def blender_pipe(
         total_responses=total_responses,
         ranks=total_ranks,
         top_k=3,
+        untils_list=untils_list
     )
 
     del llm_blender
@@ -132,7 +133,7 @@ if __name__ == "__main__":
                 continue
             dict_input = [{"instruction": user_instruction, "input": user_input}]
 
-            total_result = blender_pipe(prompt=dict_input, untils_list=[], args=args)
+            total_result = blender_pipe(prompt=dict_input, untils_list=[],args=args)
 
             print(total_result[0])
 

@@ -81,7 +81,7 @@ def get_topk_candidates_and_fuse(
     )
 
     fuse_generations = llm_blender.fuse(
-        inputs, topk_candidates, instructions=insts, batch_size=32, stop_sequences=untils_list, generate_kwargs=generate_kwargs,
+        inputs, topk_candidates, instructions=insts, batch_size=32, stop_sequences=untils_list,
     )
     return fuse_generations
 

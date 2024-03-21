@@ -27,6 +27,7 @@ from transformers import (
     AutoModelForSeq2SeqLM,
     AutoModelForSequenceClassification,
 )
+from transformers.utils import is_flash_attn_2_available
 from transformers.models.roberta.modeling_roberta import RobertaModel
 
 
@@ -61,6 +62,8 @@ def build_pretrained_model(model_type, model_name, **kwargs):
     elif model_type.startswith("other"):
         model = AutoModelForSequenceClassification.from_pretrained(model_name, **kwargs)
     elif model_type.startswith("phi"):
+        if is_flash_attn_2_available():
+            kwargs["attn_implementation"] = "flash_attention_2"
         model = AutoModelForCausalLM.from_pretrained(model_name, trust_remote_code=True, **kwargs)
     else:
         raise ValueError("Model type not supported")

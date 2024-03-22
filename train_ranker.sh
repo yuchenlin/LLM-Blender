@@ -11,10 +11,11 @@
 # module load cuda-11.8
 nvidia-smi
 # <== MODIFY THE FOLLOWING PARAMETERS ==>
-dataset="pairrm_2.7b"
+dataset="UnifiedFeedback"
+eval_dataset="reward_bench"
 backbone_type="phi" # "deberta" or "roberta"
 backbone_name="microsoft/phi-2" # "microsoft/deberta-v3-large" or "roberta-large"
-n_gpu=8
+n_gpu=4
 ranker="PairRanker" # "PairRanker" or "Summareranker" or "SimCLS"
 candidate_model="" # separted by comma. Empty string for all models
 candidate_decoding_method="" # separted by comma. Empty string for all methods
@@ -87,6 +88,15 @@ elif [[ $dataset =~ "unified_feedback" ]]; then
     gradient_accumulation_steps=4
     using_metrics="human_preference"
 
+elif [[ $dataset =~ "UnifiedFeedback" ]]; then
+    echo "Using unified_feedback user oriented datasets"
+    source_maxlength=1224
+    candidate_maxlength=412
+    per_device_train_batch_size=1
+    per_device_eval_batch_size=1
+    gradient_accumulation_steps=16
+    using_metrics="human_preference"
+
 elif [[ $dataset =~ "pairrm_2.7b" ]]; then
     echo "Using unified_feedback user oriented datasets"
     source_maxlength=1224
@@ -104,9 +114,9 @@ fi
 
 # <== Less likely to modify the following parameters ==>
 localhost=$RANDOM # random port number
-train_data_path="./data/${dataset}/train_ht.json"
-dev_data_path="./data/${dataset}/test.json"
-test_data_path="./data/${dataset}/test.json"
+train_data_path="./data/${dataset}/all_train.json"
+dev_data_path="./data/${eval_dataset}/all_test_items.json"
+test_data_path="./data/${eval_dataset}/all_test_items.json"
 if [ ! -f $test_data_path ]; then
     test_data_path=$dev_data_path
 fi
@@ -172,7 +182,7 @@ if [[ $ranker = "PairRanker" ]]; then
         --loss_type "instructgpt" \
         --sub_sampling_mode "all_pair" \
         --overwrite_output_dir True \
-        --deepspeed "./zero_configs/zero3_offload.json" \
+        --deepspeed "./zero_configs/zero3.json" \
 
 
 elif [[ $ranker = "Summareranker" ]]; then

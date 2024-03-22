@@ -33,7 +33,7 @@ do_inference=False # whether do inference instead of training, i.e. do test
 # to do inference on a dataset, you can set the checkpoint_trained_dataset to the dataset
 # by default, it is set to the dataset you are doing inference on
 checkpoint_trained_dataset=""
-run_name_postfix="_01_10_2023" # add a postfix to the run_name
+run_name_postfix="" # add a postfix to the run_name
 # LAUNCH_CMD="torchrun \
 # --rdzv_backend=c10d \
 # --rdzv_endpoint="localhost:${localhost}" \

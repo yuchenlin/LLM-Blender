@@ -64,7 +64,8 @@ cd LLM-Blender-harness
 python -m llm_evaluation_harness.tsp_pipe
 
 
-lm_eval --model hf \
+lm_eval \
+    --model hf \
     --model_args pretrained=mistralai/Mistral-7B-Instruct-v0.1 \
     --tasks mmlu_flan_n_shot_generative_stem \
     --device cuda:0 \
@@ -74,8 +75,18 @@ lm_eval --model hf \
 
 
 lm_eval --model llm_blender \
-    --tasks mmlu_flan_n_shot_generative \
+    --tasks mmlu_flan_n_shot_generative_stem \
     --num_fewshot 5 \
     --device cuda:0 \
-    --batch_size 64 \
-    --output_path $HOME/tspdisk/output/llm_blender
+    --batch_size 128 \
+    --output_path $HOME/tspdisk/output/llm_blender_0320_test2 >> ./llm_blender_record_longest.txt
+
+lm_eval \
+    --model hf \
+    --model_args pretrained=mistralai/Mistral-7B-Instruct-v0.1 \
+    --tasks mmlu_flan_n_shot_generative_stem \
+    --num_fewshot 5 \
+    --device cuda:0 \
+    --batch_size 5 \
+    --limit 1 \
+    --output_path $HOME/tspdisk/output/hf_test >> ./base_Mistral_record.txt

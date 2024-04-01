@@ -1,3 +1,6 @@
 [submodule "data/UnifiedFeedback"]
 	path = data/UnifiedFeedback
-	url = https://github.com/jdf-prog/UnifiedFeedback.git
+	url = https://github.com/jdf-prog/UnifiedFeedback
+[submodule "hf_space/LLM-Blender"]
+	path = hf_space/LLM-Blender
+	url = https://huggingface.co/spaces/llm-blender/LLM-Blender

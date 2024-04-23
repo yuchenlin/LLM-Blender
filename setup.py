@@ -10,7 +10,6 @@ setup(
     url='https://yuchenlin.xyz/LLM-Blender/',
     install_requires=[
         'transformers',
-        'datasets',
         'torch',
         'numpy',
         'accelerate',
@@ -18,20 +17,27 @@ setup(
         'dataclasses-json',
         'sentencepiece',
         'protobuf',
-        'scipy'
     ],
     extras_require={
+        "example": [
+            'datasets',
+            'scipy',
+            'jupyter'
+        ],
         "train": [
+            'datasets',
             'bitsandbytes',
             'deepspeed',
             'wandb',
         ],
         "data": [
+            'datasets',
             'openai',
             'peft',
             'fschat',
         ],
         "eval": [
+            'datasets',
             'pycocoevalcap',
             'spacy',
             'prettytable',
@@ -39,6 +45,7 @@ setup(
             'evaluate',
             'bert_score',
             'tabulate',
+            'scipy',
             'nltk',
             'scikit-learn',
             'sacrebleu',

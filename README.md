@@ -262,6 +262,11 @@ print(comparison_results)
 ## Training
 <details><summary>Train PairRanker</summary>
 
+```bash
+# installation
+pip install -e .[train]
+```
+
 See more details in [`train_ranker.sh`](./train_ranker.sh)
 
 Please follow the guide in the script to train the ranker.

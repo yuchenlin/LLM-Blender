@@ -1,8 +1,4 @@
-from sklearn.utils import shuffle
 import torch
-import random
-import json
-import numpy as np
 
 def encode_texts(texts, tokenizer, max_length=None):
     """

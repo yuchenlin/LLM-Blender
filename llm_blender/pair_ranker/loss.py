@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 import numpy as np
-from sklearn.metrics import ndcg_score
 
 PADDED_Y_VALUE = -1
 PADDED_INDEX_VALUE = -1

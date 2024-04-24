@@ -187,3 +187,6 @@ _requirements.txt
 /.vscode
 /mixinstruct_test.json
 /cache
+/alpaca_eval*
+/herm-main
+/hf_PairRM

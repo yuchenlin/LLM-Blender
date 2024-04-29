@@ -49,7 +49,6 @@
 
 ### Installation
 
-
 ```bash
 pip install llm-blender
 # pip install git+https://github.com/yuchenlin/LLM-Blender.git

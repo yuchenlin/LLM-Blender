@@ -41,7 +41,6 @@ setup(
             'pycocoevalcap',
             'spacy',
             'prettytable',
-            'BLEURT @ git+https://github.com/google-research/bleurt.git@cebe7e6f996b40910cfaa520a63db47807e3bf5c',
             'evaluate',
             'bert_score',
             'tabulate',

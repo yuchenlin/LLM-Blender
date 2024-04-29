@@ -49,16 +49,19 @@
 
 ### Installation
 
+
+```bash
+pip install llm-blender
+# pip install git+https://github.com/yuchenlin/LLM-Blender.git
+```
+Then you are good to go through our LLM-Blender with `import llm_blender`.
+
+For development, you can clone the repo and install it locally.
 ```bash
 git clone https://github.com/yuchenlin/LLM-Blender.git
 cd LLM-Blender
 pip install -e .
 ```
-or 
-```bash
-pip install git+https://github.com/yuchenlin/LLM-Blender.git
-```
-Then you are good to go through our LLM-Blender with `import llm_blender`.
 
 ### Use case 1: (Re-)Ranking model outputs by pairwise comparisons
 

@@ -117,11 +117,13 @@ def load_fuser(fuser_config: GenFuserConfig):
             device_map={"": "cpu"}, torch_dtype=get_torch_dtype(fuser_config.torch_dtype),
         )
     else:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         fuser = AutoModelForSeq2SeqLM.from_pretrained(
             model_name, cache_dir=fuser_config.cache_dir,
             device_map="auto", torch_dtype=get_torch_dtype(fuser_config.torch_dtype),
             load_in_4bit=fuser_config.load_in_4bit, load_in_8bit=fuser_config.load_in_8bit,
         )
+        fuser.to(device)
     return fuser, tokenizer
 
 class RankerDataset(torch.utils.data.Dataset):

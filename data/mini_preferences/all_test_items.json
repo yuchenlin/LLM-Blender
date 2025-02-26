@@ -1,0 +1,25 @@
+[
+  {
+    "id": "pref_1",
+    "instruction": "Hello, how are you?",
+    "input": "",
+    "candidates": [
+      {
+        "text": "Get out!",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 0.0
+        }
+      },
+      {
+        "text": "hi! I'm fine, thank you. How are you?",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 1.0
+        }
+      }
+    ]
+  }
+]

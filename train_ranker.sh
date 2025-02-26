@@ -40,7 +40,7 @@ run_name_postfix="" # add a postfix to the run_name
 # --nnodes 1 \
 # --nproc_per_node ${n_gpu} "
 
-LAUNCH_CMD="deepspeed --num_gpus ${n_gpu}"
+LAUNCH_CMD="deepspeed --num_gpus ${n_gpu} --module llm_blender.train_ranker"
 
 # set the dataset specific parameters below
 if [[ $dataset =~ "mixinstruct" ]]; then
@@ -148,7 +148,6 @@ if [[ $ranker = "PairRanker" ]]; then
     run_name="${run_name}${run_name_postfix}"
 
     ${LAUNCH_CMD} \
-    train_ranker.py \
         --ranker_type ${ranker_type} \
         --model_type ${backbone_type} \
         --model_name ${backbone_name} \
@@ -205,7 +204,6 @@ elif [[ $ranker = "Summareranker" ]]; then
     run_name="${run_name}${run_name_postfix}"
 
     ${LAUNCH_CMD} \
-    train_ranker.py \
         --ranker_type ${ranker_type} \
         --model_type ${backbone_type} \
         --model_name ${backbone_name} \
@@ -259,7 +257,6 @@ elif [[ $ranker = "SimCLS" ]]; then
     run_name="${run_name}${run_name_postfix}"
 
     ${LAUNCH_CMD} \
-    train_ranker.py \
         --ranker_type ${ranker_type} \
         --model_type ${backbone_type} \
         --model_name ${backbone_name} \

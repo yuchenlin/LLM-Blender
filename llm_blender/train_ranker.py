@@ -8,6 +8,8 @@ import os
 import argparse
 import torch
 import transformers
+import huggingface_hub
+import safetensors
 import numpy as np
 import wandb
 import os
@@ -86,11 +88,44 @@ def main(args):
     # set up model
     
     if args.load_checkpoint:
-        config = RankerConfig.from_json_file(os.path.join(args.load_checkpoint, "config.json"))
+        if args.load_checkpoint.startswith("hf:"):
+            repo_id = args.load_checkpoint[len("hf:"):]
+            config_file = huggingface_hub.hf_hub_download(
+                repo_id, "config.json")
+            try:
+                model_file_bin = huggingface_hub.hf_hub_download(
+                    repo_id, "pytorch_model.bin")
+            except huggingface_hub.errors.EntryNotFoundError:
+                model_file_bin = None
+            try:
+                model_file_safetensors = huggingface_hub.hf_hub_download(
+                    repo_id, "model.safetensors")
+            except huggingface_hub.errors.EntryNotFoundError:
+                model_file_safetensors = None
+        else:
+            config_file = os.path.join(args.load_checkpoint, "config.json")
+            model_file_bin = os.path.join(
+                args.load_checkpoint, "pytorch_model.bin")
+            if not os.path.exists(model_file_bin):
+                model_file_bin = None
+            model_file_safetensors = os.path.join(args.load_checkpoint, "model.safetensors")
+            if not os.path.exists(model_file_safetensors):
+                model_file_safetensors = None
+
+        with open(config_file, "r") as f:
+            json_config = f.read()
+            config = RankerConfig.from_json(json_config)
+
+        # It is expected and harmless that these configs change.
+        override_whitelist = ["load_checkpoint"]
         for k in args.__dict__:
             if k in config.__dict__:
-                print(k, getattr(args, k))
-                setattr(config, k, getattr(args, k))
+                if getattr(config, k) != getattr(args, k):
+                    if k not in override_whitelist:
+                        print("WARNING: Overriding checkpoint config")
+                        print(f"config.{k} = {
+                              getattr(config, k)} -> {getattr(args, k)}")
+                    setattr(config, k, getattr(args, k))
         model = build_ranker(
             args.ranker_type,
             args.model_type,
@@ -99,9 +134,17 @@ def main(args):
             config,
             tokenizer,
         )
-        state_dict = torch.load(os.path.join(args.load_checkpoint, "pytorch_model.bin"))
-        load_result = model.load_state_dict(state_dict, strict=False)
-        if load_result.missing_keys:
+        if model_file_safetensors is not None:
+            load_result = safetensors.torch.load_model(
+                model, model_file_safetensors)
+            missing_keys, unexpected_keys = load_result
+        elif model_file_bin is not None:
+            state_dict = torch.load(model_file_safetensors)
+            load_result = model.load_state_dict(state_dict, strict=False)
+            missing_keys = load_result.missing_keys
+        else:
+            raise ValueError(f"Cannot find model file in {args.load_checkpoint}")
+        if missing_keys:
             logging.warning(f"Missing keys: {load_result.missing_keys}")
         else:
             logging.info(f"Successfully loaded checkpoint from '{args.load_checkpoint}'")

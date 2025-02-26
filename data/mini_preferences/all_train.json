@@ -1,0 +1,94 @@
+[
+  {
+    "id": "pref_1",
+    "instruction": "Write a short poem about coding.",
+    "input": "",
+    "candidates": [
+      {
+        "text": "In lines of code, a story unfolds,\nBugs and features, secrets untold.\nDebug by day, compile by night,\nMaking programs work just right.",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 1.0
+        }
+      },
+      {
+        "text": "Code code code\nComputer go beep\nThe end",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 0.0
+        }
+      }
+    ]
+  },
+  {
+    "id": "pref_2",
+    "instruction": "Explain what a database is.",
+    "input": "",
+    "candidates": [
+      {
+        "text": "A database is like a filing cabinet where computers store information in an organized way.",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 0.0
+        }
+      },
+      {
+        "text": "A database is an organized collection of structured information stored electronically. It allows for efficient da management, retrieval, and updating while maintaining data integrity and supporting multiple users.",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 1.0
+        }
+      }
+    ]
+  },
+  {
+    "id": "pref_3",
+    "instruction": "Give advice about learning to code.",
+    "input": "",
+    "candidates": [
+      {
+        "text": "just google stuff and copy paste code",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 0.0
+        }
+      },
+      {
+        "text": "Start with the basics, practice consistently, work on small projects that interest you, and don't be afraid to make mistakes. Join coding communities and learn from others' experiences.",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 1.0
+        }
+      }
+    ]
+  },
+  {
+    "id": "pref_4",
+    "instruction": "Describe the weather today.",
+    "input": "",
+    "candidates": [
+      {
+        "text": "The sun shines brightly in a clear blue sky, with a gentle breeze making the temperature perfect for outdoor activities.",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 1.0
+        }
+      },
+      {
+        "text": "its sunny",
+        "model": "human",
+        "decoding_method": "preference",
+        "scores": {
+          "human_preference": 0.0
+        }
+      }
+    ]
+  }
+]

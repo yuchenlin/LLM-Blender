@@ -19,7 +19,6 @@ from transformers import (
 )
 from typing import List
 from huggingface_hub import snapshot_download
-from transformers.utils.hub import TRANSFORMERS_CACHE
 
 def get_torch_dtype(dtype_str):
     """

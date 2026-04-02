@@ -11,7 +11,9 @@ from transformers import EvalPrediction
 from typing import Dict, List, Optional, Tuple, Union, Any
 from torch.utils.data import Dataset
 from dataclasses import asdict
+
 logger = logging.getLogger(__name__)
+
 
 class RerankerTrainer(Trainer):
     def evaluate(
@@ -28,8 +30,13 @@ class RerankerTrainer(Trainer):
         if self.is_world_process_zero():
             super().save_model(output_dir, **kwargs)
             model = self.model.module if hasattr(self.model, "module") else self.model
-            json.dump(asdict(model.args), open(os.path.join(output_dir, "config.json"), "w"), indent=4)
-            
+            json.dump(
+                asdict(model.args),
+                open(os.path.join(output_dir, "config.json"), "w"),
+                indent=4,
+            )
+
+
 class FiDTrainer(Seq2SeqTrainer):
     def compute_loss(self, model, inputs, return_outputs=False):
         """
@@ -47,11 +54,6 @@ class FiDTrainer(Seq2SeqTrainer):
             labels=inputs["labels"],
         )
 
-        # Save past state if it exists
-        # TODO: this needs to be fixed and made cleaner later.
-        if self.args.past_index >= 0:
-            self._past = outputs[self.args.past_index]
-
         if labels is not None:
             loss = self.label_smoother(outputs, labels)
         else:
@@ -67,30 +69,43 @@ class FiDTrainer(Seq2SeqTrainer):
 
         return (loss, outputs) if return_outputs else loss
 
+
 def compute_metrics_for_scr(eval_pred: EvalPrediction) -> Dict[str, float]:
-    preds, labels = eval_pred # pred_scores [batch_size, num_candidates], scores [batch_size, num_candidates, n_tasks]
+    preds, labels = (
+        eval_pred  # pred_scores [batch_size, num_candidates], scores [batch_size, num_candidates, n_tasks]
+    )
     pred_scores = preds
     scores = labels
-    agg_scores = np.mean(scores, axis=-1) # aggregate scores
+    agg_scores = np.mean(scores, axis=-1)  # aggregate scores
 
-    sort_indices = np.flip(np.argsort(agg_scores, axis=-1), axis=-1) # (batch_size, n_candidates), expected ranks
+    sort_indices = np.flip(
+        np.argsort(agg_scores, axis=-1), axis=-1
+    )  # (batch_size, n_candidates), expected ranks
     ranks = np.zeros_like(sort_indices)
-    ranks[np.arange(sort_indices.shape[0])[:, None], sort_indices] = np.arange(sort_indices.shape[-1])
-    pred_sort_indices = np.flip(np.argsort(pred_scores, axis=-1), axis=-1) # (batch_size, n_candidates), predicted ranks
+    ranks[np.arange(sort_indices.shape[0])[:, None], sort_indices] = np.arange(
+        sort_indices.shape[-1]
+    )
+    pred_sort_indices = np.flip(
+        np.argsort(pred_scores, axis=-1), axis=-1
+    )  # (batch_size, n_candidates), predicted ranks
     pred_ranks = np.zeros_like(pred_sort_indices)
-    pred_ranks[np.arange(pred_sort_indices.shape[0])[:, None], pred_sort_indices] = np.arange(pred_sort_indices.shape[-1])
+    pred_ranks[np.arange(pred_sort_indices.shape[0])[:, None], pred_sort_indices] = (
+        np.arange(pred_sort_indices.shape[-1])
+    )
 
     # compute selection scores
-    sel_idx = np.argmax(pred_scores, axis=1) # [batch_size]
-    sel_scores = scores[np.arange(scores.shape[0]), sel_idx] # [batch_size, n_task]
-    sel_ranks = ranks[np.arange(ranks.shape[0]), sel_idx] # [batch_size]
-    sel_acc = np.mean((sel_ranks == 0)) # scalar
+    sel_idx = np.argmax(pred_scores, axis=1)  # [batch_size]
+    sel_scores = scores[np.arange(scores.shape[0]), sel_idx]  # [batch_size, n_task]
+    sel_ranks = ranks[np.arange(ranks.shape[0]), sel_idx]  # [batch_size]
+    sel_acc = np.mean((sel_ranks == 0))  # scalar
 
     # compute oracle scores for reference
-    oracle_sel_idx = np.argmax(agg_scores, axis=1) # [batch_size]
-    oracle_sel_scores = scores[np.arange(scores.shape[0]), oracle_sel_idx] # [batch_size, n_task]
-    oracle_sel_ranks = ranks[np.arange(ranks.shape[0]), oracle_sel_idx] # [batch_size]
-    oracle_sel_acc = np.mean((oracle_sel_ranks == 0)) # scalar
+    oracle_sel_idx = np.argmax(agg_scores, axis=1)  # [batch_size]
+    oracle_sel_scores = scores[
+        np.arange(scores.shape[0]), oracle_sel_idx
+    ]  # [batch_size, n_task]
+    oracle_sel_ranks = ranks[np.arange(ranks.shape[0]), oracle_sel_idx]  # [batch_size]
+    oracle_sel_acc = np.mean((oracle_sel_ranks == 0))  # scalar
 
     metrics = {
         "sel": {
@@ -101,13 +116,12 @@ def compute_metrics_for_scr(eval_pred: EvalPrediction) -> Dict[str, float]:
             "acc": oracle_sel_acc,
             "rank": np.mean(oracle_sel_ranks),
         },
-        "dev_score": np.mean(sel_scores[:, 0]), # dev score used for save checkpoint,
+        "dev_score": np.mean(sel_scores[:, 0]),  # dev score used for save checkpoint,
     }
     for i in range(sel_scores.shape[-1]):
-        metrics["sel"]["metric{}".format(i+1)] = np.mean(sel_scores[:, i])
-        metrics["oracle"]["metric{}".format(i+1)] = np.mean(oracle_sel_scores[:, i])
+        metrics["sel"]["metric{}".format(i + 1)] = np.mean(sel_scores[:, i])
+        metrics["oracle"]["metric{}".format(i + 1)] = np.mean(oracle_sel_scores[:, i])
     return metrics
-
 
 
 def compute_metrics_for_pairranker(eval_pred: EvalPrediction) -> Dict[str, float]:
@@ -116,12 +130,12 @@ def compute_metrics_for_pairranker(eval_pred: EvalPrediction) -> Dict[str, float
     Args:
 
     """
-    preds, labels = eval_pred # scores [batch_size, n_candidates, n_tasks]
+    preds, labels = eval_pred  # scores [batch_size, n_candidates, n_tasks]
     logits = preds
-    
-    scores = labels # [batch_size, n_candidates, n_tasks]
+
+    scores = labels  # [batch_size, n_candidates, n_tasks]
     # scores = scores[:, :-1] # debug
-    mean_scores = np.mean(scores, axis=-1) # [batch_size, n_candidates]
+    mean_scores = np.mean(scores, axis=-1)  # [batch_size, n_candidates]
     batch_size, n_candidates, n_tasks = scores.shape
 
     # get the predicted best index
@@ -130,7 +144,9 @@ def compute_metrics_for_pairranker(eval_pred: EvalPrediction) -> Dict[str, float
         pred_best_idx = logits[:, 2, -1]
     elif logits.shape == (batch_size, n_candidates, n_candidates):
         # full
-        pred_best_idx = np.argmax(np.mean(logits, axis=2) - np.mean(logits, axis=1), axis=-1)
+        pred_best_idx = np.argmax(
+            np.mean(logits, axis=2) - np.mean(logits, axis=1), axis=-1
+        )
     else:
         raise ValueError("Invalid logits shape: {}".format(logits.shape))
 
@@ -144,12 +160,14 @@ def compute_metrics_for_pairranker(eval_pred: EvalPrediction) -> Dict[str, float
         "gain": {},
     }
     for i in range(n_tasks):
-        metrics["sel"]["metric_{}".format(i+1)] = np.mean(pred_best_scores[:, i])
-        metrics["oracle"]["metric_{}".format(i+1)] = np.mean(oracle_best_scores[:, i])
-        metrics["top_beam"]["metric_{}".format(i+1)] = np.mean(scores[:, 0, i])
-        metrics["gain"]["metric_{}".format(i+1)] = metrics["sel"]["metric_{}".format(i+1)] / metrics["top_beam"]["metric_{}".format(i+1)] - 1
-    metrics['dev_score'] = metrics['sel']['metric_1']
+        metrics["sel"]["metric_{}".format(i + 1)] = np.mean(pred_best_scores[:, i])
+        metrics["oracle"]["metric_{}".format(i + 1)] = np.mean(oracle_best_scores[:, i])
+        metrics["top_beam"]["metric_{}".format(i + 1)] = np.mean(scores[:, 0, i])
+        metrics["gain"]["metric_{}".format(i + 1)] = (
+            metrics["sel"]["metric_{}".format(i + 1)]
+            / metrics["top_beam"]["metric_{}".format(i + 1)]
+            - 1
+        )
+    metrics["dev_score"] = metrics["sel"]["metric_1"]
 
     return metrics
-
-

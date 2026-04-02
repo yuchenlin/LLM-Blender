@@ -26,6 +26,7 @@
 
 ## 🔥News
 
+- [2026/4/2] LLM-Blender is now compatible with **Transformers v5**! See the [changelog](https://github.com/kashif/LLM-Blender/tree/fix/transformers-v5) for details.
 - [2024/1/5] PairRM can now be directly loaded using Hugging face Wrapper `DebertaV2PairRM.from_pretrained("llm-blender/PairRM-hf")`, see more in our [🤗Model page](https://huggingface.co/llm-blender/PairRM-hf)
 - [2023/11/10] Glad to announce that our pairwise reward-model, 🤗[PairRM](https://huggingface.co/llm-blender/PairRM), has released. It's trained on high-quality and large-scale human reference dataset and approaches GPT-4's alignment with human preference with a extremly small model size (0.4B).
 
